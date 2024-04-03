@@ -1,7 +1,6 @@
 package toml
 
 import (
-	"fmt"
 	"github.com/pelletier/go-toml/v2"
 	"io/ioutil"
 )
@@ -26,6 +25,5 @@ func PostApiKeyToToml(k string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(data))
 	return nil
 }
