@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Home</title>
-</head>
-<body>
-    <h1>Home Page</h1>
-</body>
-</html>
+{{ template "header.html" .}}
+    <div class="container">
+        <h1>Home Page</h1>
+        {{ template "scanner.html" .}}
+    </div>
+{{ template "footer.html" .}}

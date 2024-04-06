@@ -1,0 +1,10 @@
+{{ template "header.html" .}}
+<form action="/settings/addKey" name="inputKey" method="post">
+    <div class="container">
+        <label for="inputApiKey" class="form-label">Api-Key</label>
+        <input type="text" id="inputApiKey" class="form-control" aria-describedby="passwordHelpBlock" name="apiKey" value={{ .key }}>
+
+        <button type="submit" class="btn btn-success">Success</button>
+    </div>
+</form>
+{{ template "footer.html" .}}

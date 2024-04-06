@@ -3,7 +3,7 @@ module github.com/YoungGoofy/WebScanner
 go 1.22
 
 require (
-	github.com/YoungGoofy/gozap v0.0.0-20240402114636-760917e4c38a // indirect
+	github.com/YoungGoofy/gozap v0.0.0-20240404204930-07fa8ec0d2eb // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect

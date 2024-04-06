@@ -2,7 +2,10 @@ package toml
 
 import (
 	"github.com/pelletier/go-toml/v2"
+	"io"
 	"io/ioutil"
+	"log"
+	"os"
 )
 
 type config struct {
@@ -26,4 +29,24 @@ func PostApiKeyToToml(k string) error {
 		return err
 	}
 	return nil
+}
+
+func GetApiKeyFromToml() string {
+	file, err := os.Open("internal/configs/configs.toml")
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	defer file.Close()
+	var cfg config
+	b, err := io.ReadAll(file)
+	if err != nil {
+		log.Println(err)
+		return ""
+	}
+	if err = toml.Unmarshal(b, &cfg); err != nil {
+		log.Println(err)
+		return ""
+	}
+	return cfg.Api.Key
 }
