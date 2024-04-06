@@ -8,8 +8,62 @@
     </div>
 </form>
 
-<p></p>
-<div class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="25" aria-valuemin="0"
-     aria-valuemax="100">
-    <div class="progress-bar" style="width: 1%">0%</div>
+<div class="progress">
+    <div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="60"
+         aria-valuemin="0" aria-valuemax="100" style="width: 0;"></div>
 </div>
+
+<script>
+    const eventSource = new EventSource('scan');
+
+    eventSource.addEventListener('progress', function (event) {
+        const data = JSON.parse(event.data);
+
+        console.log('Received progress event:', data);
+
+        if (data.currentTask != undefined) {
+            progressBar(data);
+            console.log('Updating progress bar...');
+        }
+
+        if (data.completed == true) {
+            closeEventStream();
+            console.log('Scan completed.');
+        }
+    });
+
+    eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received message:', data);
+    };
+
+    eventSource.onerror = (error) => {
+        console.error('SSE error:', error);
+    };
+
+    // Either this or the one above
+    eventSource.addEventListener('error', (error) => {
+        console.error('SSE error:', error);
+    });
+
+    eventSource.onopen = () => {
+        console.log('SSE connection opened');
+    };
+
+    eventSource.onclose = () => {
+        console.log('SSE connection closed');
+    };
+
+    function closeEventStream() {
+        console.log('Closing event stream...');
+        eventSource.close();
+    }
+
+    function progressBar(data) {
+        // Get the progress bar element
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = `${data.progressPercentage}%`;
+
+        console.log('Updating progress bar:', data.progressPercentage);
+    }
+</script>

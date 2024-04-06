@@ -8,11 +8,11 @@ import (
 )
 
 type scanner struct {
-	gozap.Scan
+	gozap.MainScan
 }
 
 func newScanner(apiKey string) *scanner {
-	newScan := gozap.NewScan("", apiKey)
+	newScan := gozap.NewMainScan("", apiKey)
 	//newSpider := gozap.NewSpider(*newScan)
 	return &scanner{*newScan}
 }
@@ -38,21 +38,42 @@ func MainHandler(api *gin.Engine) {
 
 func (s *scanner) startScan(c *gin.Context) {
 	newUrl := struct {
-		Url string `form:"url" binding:"required"`
+		Url string `form:"url"`
 	}{}
 	if err := c.ShouldBind(&newUrl); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	//if err := s.GetSessionId(); err != nil {
-	//	c.JSON(http.StatusBadRequest, gin.H{
-	//		"error": err,
-	//	})
-	//}
-	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusOK, gin.H{
-		"message": newUrl.Url,
-	})
+	s.AddUrl(newUrl.Url)
+	spider := gozap.NewSpider(s.MainScan)
+	if err := spider.GetSessionId(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
+	for {
+		status, err := spider.GetStatus()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err,
+			})
+		}
+		c.SSEvent("progress", map[string]interface{}{
+			"currentTask":        nil,
+			"progressPercentage": status,
+			"completed":          false,
+		})
+		c.Writer.Flush()
+		if status == "100" {
+			break
+		}
+	}
+	//c.SSEvent("progress", map[string]interface{}{
+	//	"progressPercentage": 100,
+	//	"completed":          true,
+	//})
+	//c.Writer.Flush()
 }
 
 func (s *scanner) spiderResult(c *gin.Context) {
