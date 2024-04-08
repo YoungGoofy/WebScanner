@@ -5,6 +5,7 @@ import (
 	"github.com/YoungGoofy/gozap/pkg/gozap"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"time"
 )
 
 type scanner struct {
@@ -48,32 +49,47 @@ func (s *scanner) startScan(c *gin.Context) {
 	spider := gozap.NewSpider(s.MainScan)
 	if err := spider.GetSessionId(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
+			"error": err.Error(),
 		})
 		return
 	}
-	for {
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+
+	// Отправляем начальное состояние сканирования
+	c.SSEvent("progress", map[string]interface{}{
+		"progressPercentage": 0,
+		"completed":          false,
+	})
+	c.Writer.Flush()
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+	for range ticker.C {
 		status, err := spider.GetStatus()
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err,
+				"error": err.Error(),
 			})
+			return
+		}
+		if status == "100" {
+			break
 		}
 		c.SSEvent("progress", map[string]interface{}{
-			"currentTask":        nil,
 			"progressPercentage": status,
 			"completed":          false,
 		})
 		c.Writer.Flush()
-		if status == "100" {
-			break
-		}
 	}
-	//c.SSEvent("progress", map[string]interface{}{
-	//	"progressPercentage": 100,
-	//	"completed":          true,
-	//})
-	//c.Writer.Flush()
+
+	c.SSEvent("progress", map[string]interface{}{
+		"progressPercentage": 100,
+		"completed":          true,
+	})
+	c.Writer.Flush()
 }
 
 func (s *scanner) spiderResult(c *gin.Context) {

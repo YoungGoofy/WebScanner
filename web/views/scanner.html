@@ -1,4 +1,4 @@
-<form action="/scan" name="inputKey" method="get">
+<form onsubmit="submitForm(event)" name="inputKey" method="get">
     <div class="container">
         <label for="inputUrl" class="form-label">URL</label>
         <input type="text" id="inputUrl" class="form-control" aria-describedby="passwordHelpBlock" name="url"
@@ -14,56 +14,68 @@
 </div>
 
 <script>
-    const eventSource = new EventSource('scan');
+    function submitForm(event) {
+        event.preventDefault();
 
-    eventSource.addEventListener('progress', function (event) {
-        const data = JSON.parse(event.data);
+        const submitButton = document.getElementById('submitButton');
+        submitButton.disabled = true;
 
-        console.log('Received progress event:', data);
+        const inputUrlElement = document.getElementById('inputUrl');
+        const urlValue = inputUrlElement.value;
+        const evenSourceUrl = 'scan?url=' + encodeURIComponent(urlValue);
 
-        if (data.currentTask != undefined) {
-            progressBar(data);
-            console.log('Updating progress bar...');
+        const eventSource = new EventSource(evenSourceUrl);
+
+        eventSource.addEventListener('progress', function (event) {
+            const data = JSON.parse(event.data);
+
+            console.log('Received progress event:', data);
+
+            if (data.progressPercentage != "0") {
+                progressBar(data);
+                console.log('Updating progress bar...');
+            }
+
+            if (data.completed == true) {
+                closeEventStream();
+                console.log('Scan completed.');
+            }
+        });
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            console.log('Received message:', data);
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE error:', error);
+        };
+
+        // Either this or the one above
+        eventSource.addEventListener('error', (error) => {
+            console.error('SSE error:', error);
+        });
+
+        eventSource.onopen = () => {
+            console.log('SSE connection opened');
+        };
+
+        eventSource.onclose = () => {
+            console.log('SSE connection closed');
+        };
+
+        function closeEventStream() {
+            console.log('Closing event stream...');
+            submitButton.disabled = false;
+            eventSource.close();
         }
 
-        if (data.completed == true) {
-            closeEventStream();
-            console.log('Scan completed.');
+        function progressBar(data) {
+            // Get the progress bar element
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = `${data.progressPercentage}%`;
+
+            console.log('Updating progress bar:', data.progressPercentage);
         }
-    });
-
-    eventSource.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log('Received message:', data);
-    };
-
-    eventSource.onerror = (error) => {
-        console.error('SSE error:', error);
-    };
-
-    // Either this or the one above
-    eventSource.addEventListener('error', (error) => {
-        console.error('SSE error:', error);
-    });
-
-    eventSource.onopen = () => {
-        console.log('SSE connection opened');
-    };
-
-    eventSource.onclose = () => {
-        console.log('SSE connection closed');
-    };
-
-    function closeEventStream() {
-        console.log('Closing event stream...');
-        eventSource.close();
-    }
-
-    function progressBar(data) {
-        // Get the progress bar element
-        const progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = `${data.progressPercentage}%`;
-
-        console.log('Updating progress bar:', data.progressPercentage);
     }
 </script>
