@@ -1,5 +1,7 @@
 github.com/YoungGoofy/gozap v0.0.0-20240406153446-7660e040acfe h1:BKDZc7lntLoEloNGk0g2W9cr2AsHtfKcucXsRmkOUDU=
 github.com/YoungGoofy/gozap v0.0.0-20240406153446-7660e040acfe/go.mod h1:blEJz4+uP+u5NBisimoY06vU4O2mUOVcUfTWenN9zP4=
+github.com/YoungGoofy/gozap v0.0.0-20240409095718-513b0f17d3d6 h1:pkRa56YeyEAcNuakbugl7iL0emudmAdw7TE9Q4pzMoI=
+github.com/YoungGoofy/gozap v0.0.0-20240409095718-513b0f17d3d6/go.mod h1:blEJz4+uP+u5NBisimoY06vU4O2mUOVcUfTWenN9zP4=
 github.com/bytedance/sonic v1.5.0/go.mod h1:ED5hyg4y6t3/9Ku1R6dU/4KyJ48DZ4jPhfY1O2AihPM=
 github.com/bytedance/sonic v1.9.1 h1:6iJ6NqdoxCDr6mbY8h18oSO+cShGSMRGCEo7F2h0x8s=
 github.com/bytedance/sonic v1.9.1/go.mod h1:i736AoUSYt75HyZLoJW9ERYxcy6eaN6h4BZXU064P/U=

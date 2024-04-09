@@ -5,7 +5,7 @@ import (
 	"github.com/YoungGoofy/gozap/pkg/gozap"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"time"
+	"sync"
 )
 
 type scanner struct {
@@ -41,6 +41,7 @@ func (s *scanner) startScan(c *gin.Context) {
 	newUrl := struct {
 		Url string `form:"url"`
 	}{}
+	var wg sync.WaitGroup
 	if err := c.ShouldBind(&newUrl); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -61,7 +62,7 @@ func (s *scanner) startScan(c *gin.Context) {
 	// Отправляем начальное состояние сканирования
 	ssEvent(c, "0", false)
 
-	checkStatus(c, spider)
+	checkStatus(c, spider, &wg)
 
 	ssEvent(c, "100", true)
 }
@@ -81,20 +82,49 @@ func ssEvent(c *gin.Context, progressPercentage string, completed bool) {
 	c.Writer.Flush()
 }
 
-func checkStatus(c *gin.Context, spider *gozap.Spider) {
-	ticker := time.NewTicker(1 * time.Second)
-	defer ticker.Stop()
-	for range ticker.C {
-		status, err := spider.GetStatus()
-		if err != nil {
+func checkStatus(c *gin.Context, spider *gozap.Spider, wg *sync.WaitGroup) {
+	dataCh := make(chan gozap.UrlsInScope)
+	errCh := make(chan error)
+	statusCh := make(chan string)
+	done := make(chan struct{})
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		spider.AsyncGetResult(dataCh, errCh, statusCh, done)
+	}()
+	for {
+		select {
+		case urls := <-dataCh:
+			// TODO: add output in html, maybe js
+			for _, url := range urls {
+				c.SSEvent("results", map[string]string{
+					"processed":          url.Processed,
+					"statusReason":       url.StatusReason,
+					"method":             url.Method,
+					"reasonNotProcessed": url.ReasonNotProcessed,
+					"messageId":          url.MessageID,
+					"url":                url.URL,
+					"statusCode":         url.StatusCode,
+				})
+				c.Writer.Flush()
+			}
+			//----------------------------------------------------
+		case err := <-errCh:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
+		case status := <-statusCh:
+			ssEvent(c, status, false)
+			if status == "100" {
+				close(done)
+			}
+		case <-done:
+			wg.Wait()
+			close(dataCh)
+			close(errCh)
+			close(statusCh)
 			return
 		}
-		if status == "100" {
-			break
-		}
-		ssEvent(c, status, false)
 	}
 }

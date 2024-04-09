@@ -20,5 +20,6 @@ func postAPIKey(c *gin.Context) {
 		log.Println(err)
 		return
 	}
-	c.HTML(http.StatusOK, "settings.html", gin.H{"apiKey": newApiKey.ApiKey})
+	//c.HTML(http.StatusOK, "settings.html", gin.H{"apiKey": newApiKey.ApiKey})
+	c.Redirect(http.StatusFound, "/")
 }
