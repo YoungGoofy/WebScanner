@@ -59,12 +59,29 @@ func (s *scanner) startScan(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 
 	// Отправляем начальное состояние сканирования
+	ssEvent(c, "0", false)
+
+	checkStatus(c, spider)
+
+	ssEvent(c, "100", true)
+}
+
+func (s *scanner) spiderResult(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Handler not working",
+	})
+}
+
+func ssEvent(c *gin.Context, progressPercentage string, completed bool) {
 	c.SSEvent("progress", map[string]interface{}{
-		"progressPercentage": 0,
-		"completed":          false,
+		"progressPercentage": progressPercentage,
+		"completed":          completed,
 	})
 	c.Writer.Flush()
+}
 
+func checkStatus(c *gin.Context, spider *gozap.Spider) {
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 	for range ticker.C {
@@ -78,23 +95,6 @@ func (s *scanner) startScan(c *gin.Context) {
 		if status == "100" {
 			break
 		}
-		c.SSEvent("progress", map[string]interface{}{
-			"progressPercentage": status,
-			"completed":          false,
-		})
-		c.Writer.Flush()
+		ssEvent(c, status, false)
 	}
-
-	c.SSEvent("progress", map[string]interface{}{
-		"progressPercentage": 100,
-		"completed":          true,
-	})
-	c.Writer.Flush()
-}
-
-func (s *scanner) spiderResult(c *gin.Context) {
-	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Handler not working",
-	})
 }
