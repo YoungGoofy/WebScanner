@@ -1,10 +1,15 @@
 <form onsubmit="submitForm(event)" name="inputKey" method="get">
     <div class="container">
-        <label for="inputUrl" class="form-label">URL</label>
-        <input type="text" id="inputUrl" class="form-control" aria-describedby="passwordHelpBlock" name="url"
-               placeholder="Input url for scanning">
-        <p></p>
-        <button type="submit" class="btn btn-success" id="submitButton">Success</button>
+        <div class="row">
+            <label for="inputUrl" class="form-label">URL</label>
+            <div class="col-8">
+                <input type="text" id="inputUrl" class="form-control" aria-describedby="passwordHelpBlock" name="url"
+                       placeholder="Input url for scanning">
+            </div>
+            <div class="col-4">
+                <button type="submit" class="btn btn-success" id="submitButton">Success</button>
+            </div>
+        </div>
     </div>
 </form>
 
@@ -45,6 +50,12 @@
             }
         });
 
+        eventSource.addEventListener('results', function (event) {
+            const data = JSON.parse(event.data);
+            // console.log('New data: ', data)
+            table(data)
+        });
+
         eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
             console.log('Received message:', data);
@@ -80,36 +91,42 @@
 
             console.log('Updating progress bar:', data.progressPercentage);
         }
+
+        function table(data) {
+            const tbody = document.getElementById('tbody');
+            const newRow = document.createElement('tr');
+
+            newRow.innerHTML = `
+        <th scope="row">${tbody.childElementCount + 1}</th>
+        <td>${data.processed}</td>
+        <td>${data.statusReason}</td>
+        <td>${data.method}</td>
+        <td>${data.reasonNotProcessed}</td>
+        <td>${data.messageId}</td>
+        <td>${data.url}</td>
+        <td>${data.statusCode}</td>
+    `;
+
+            tbody.appendChild(newRow);
+        }
     }
 </script>
 
 <p></p>
-<table class="table">
+<table class="table" id="t_table">
     <thead>
     <tr>
         <th scope="col">#</th>
-        <th scope="col">First</th>
-        <th scope="col">Last</th>
-        <th scope="col">Handle</th>
+        <th scope="col">Processed</th>
+        <th scope="col">Status Reason</th>
+        <th scope="col">Method</th>
+        <th scope="col">Reason Not Processed</th>
+        <th scope="col">Message Id</th>
+        <th scope="col">Url</th>
+        <th scope="col">Status Code</th>
     </tr>
     </thead>
-    <tbody>
-    <tr>
-        <th scope="row">1</th>
-        <td>Mark</td>
-        <td>Otto</td>
-        <td>@mdo</td>
-    </tr>
-    <tr>
-        <th scope="row">2</th>
-        <td>Jacob</td>
-        <td>Thornton</td>
-        <td>@fat</td>
-    </tr>
-    <tr>
-        <th scope="row">3</th>
-        <td colspan="2">Larry the Bird</td>
-        <td>@twitter</td>
-    </tr>
+    <tbody id="tbody">
+
     </tbody>
 </table>

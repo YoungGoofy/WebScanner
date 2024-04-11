@@ -9,7 +9,7 @@ import (
 )
 
 type scanner struct {
-	gozap.MainScan
+	MainScanner gozap.MainScan
 }
 
 func newScanner(apiKey string) *scanner {
@@ -46,8 +46,8 @@ func (s *scanner) startScan(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	s.AddUrl(newUrl.Url)
-	spider := gozap.NewSpider(s.MainScan)
+	s.MainScanner.AddUrl(newUrl.Url)
+	spider := gozap.NewSpider(s.MainScanner)
 	if err := spider.GetSessionId(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -60,21 +60,37 @@ func (s *scanner) startScan(c *gin.Context) {
 	c.Header("Connection", "keep-alive")
 
 	// Отправляем начальное состояние сканирования
-	ssEvent(c, "0", false)
+	ssEventStatus(c, "0", false)
 
 	checkStatus(c, spider, &wg)
 
-	ssEvent(c, "100", true)
+	ssEventStatus(c, "100", true)
 }
 
 func (s *scanner) spiderResult(c *gin.Context) {
-	c.Header("Content-Type", "application/json")
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Handler not working",
+	main := s.MainScanner
+	countOfAlerts, err := main.CountOfAlerts()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	alerts, err := main.GetAlerts("0", "10")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.HTML(http.StatusOK, "alerts.html", gin.H{
+		"title":  "Alerts",
+		"count":  countOfAlerts,
+		"alerts": alerts.Alert,
 	})
 }
 
-func ssEvent(c *gin.Context, progressPercentage string, completed bool) {
+func ssEventStatus(c *gin.Context, progressPercentage string, completed bool) {
 	c.SSEvent("progress", map[string]interface{}{
 		"progressPercentage": progressPercentage,
 		"completed":          completed,
@@ -96,7 +112,6 @@ func checkStatus(c *gin.Context, spider *gozap.Spider, wg *sync.WaitGroup) {
 	for {
 		select {
 		case urls := <-dataCh:
-			// TODO: add output in html, maybe js
 			for _, url := range urls {
 				c.SSEvent("results", map[string]string{
 					"processed":          url.Processed,
@@ -109,13 +124,12 @@ func checkStatus(c *gin.Context, spider *gozap.Spider, wg *sync.WaitGroup) {
 				})
 				c.Writer.Flush()
 			}
-			//----------------------------------------------------
 		case err := <-errCh:
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
 			})
 		case status := <-statusCh:
-			ssEvent(c, status, false)
+			ssEventStatus(c, status, false)
 			if status == "100" {
 				close(done)
 			}

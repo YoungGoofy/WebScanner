@@ -1,0 +1,9 @@
+{{ template "header.html" .}}
+<div>
+    <p>Alerts: {{ .count }}</p>
+    {{ range $index, $alert := .alerts }}
+        <p>{{$index}}: {{$alert}}</p>
+    {{ end }}
+</div>
+
+{{ template "footer.html" .}}
