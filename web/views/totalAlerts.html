@@ -1,0 +1,17 @@
+{{ template "header.html" .}}
+<div class="row">
+    {{ range .values}}
+        <div class="col-sm-6 mb-3 mb-sm-3">
+            <div class="card">
+
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ .Method }} | {{ .Url }}</h5>
+                    <p class="card-text">{{ .Description }}</p>
+                    <a href="#" class="card-link">More info</a>
+                </div>
+            </div>
+        </div>
+    {{ end }}
+</div>
+
+{{ template "footer.html" .}}

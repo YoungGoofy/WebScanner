@@ -1,0 +1,35 @@
+{{ template "header.html" .}}
+<div>
+    <div class="container px-4 text-center">
+        <div class="row gx-5">
+            <div class="col">
+                <div class="p-3">
+                    <h2>
+                        Alerts: {{ .count }}
+                    </h2>
+                </div>
+            </div>
+            <div class="col">
+                <div class="p-3">
+                    <div class="input-group mb-3">
+                        <button class="btn btn-outline-secondary" type="button" id="button-addon1">Button</button>
+                        <input type="text" class="form-control" placeholder=""
+                               aria-label="Example text with button addon" aria-describedby="button-addon1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <ol class="list-group list-group-numbered">
+        {{ range .alerts }}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div class="ms-2 me-auto">
+                    <div class="fw-bold"><a href="/scan/alerts/{{ .CweId }}">{{ .Name }}</a></div>
+                </div>
+                <span class="badge text-bg-primary rounded-pill">{{ .Count }}</span>
+            </li>
+        {{ end }}
+    </ol>
+</div>
+
+{{ template "footer.html" .}}
