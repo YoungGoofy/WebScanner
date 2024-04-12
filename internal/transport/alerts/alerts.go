@@ -5,6 +5,7 @@ import (
 	"github.com/YoungGoofy/gozap/pkg/gozap"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type (
@@ -23,7 +24,6 @@ type (
 			Description string
 		}
 	}
-
 	groupOfCommonAlerts struct {
 		CommonAlerts []CommonAlert
 	}
@@ -41,6 +41,7 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 			"error": err.Error(),
 		})
 	}
+	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32)}
 	err = a.groupOfCommonAlerts.commonAlerts(countOfAlerts, main)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -55,6 +56,7 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 }
 
 func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.MainScan) error {
+
 	listOfAlerts, err := main.GetAlerts("0", countOfAlerts)
 	if err != nil {
 		return err
@@ -76,12 +78,12 @@ func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.Main
 			}
 		}
 		if !found {
-			var totalCommonAlerts []struct {
+			var totalCommonAlerts = make([]struct {
 				Id          string
 				Method      string
 				Url         string
 				Description string
-			}
+			}, 0, 256)
 			totalCommonAlerts = append(totalCommonAlerts, struct {
 				Id          string
 				Method      string
@@ -95,16 +97,40 @@ func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.Main
 	return nil
 }
 
+type Pagination struct {
+	PrevPage int
+	NextPage int
+	CurrPage int
+}
+
 func (a *Alerts) GetTotalCommonAlerts(c *gin.Context) {
 	cweId := c.Param("cwe_id")
+	page, err := strconv.Atoi(c.Param("page"))
+	startIndex := (page - 1) * 25
+	endIndex := page * 25
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+	}
+
 	values := a.groupOfCommonAlerts.getAlertsFromId(cweId)
 	if values == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "No cwe_id",
 		})
 	}
+	if endIndex > len(values) {
+		endIndex = len(values)
+	}
 	c.HTML(http.StatusOK, "totalAlerts.html", gin.H{
-		"values": values,
+		"cwe_id": cweId,
+		"values": values[startIndex:endIndex],
+		"pagination": Pagination{
+			PrevPage: page - 1,
+			CurrPage: page,
+			NextPage: page + 1,
+		},
 	})
 }
 

@@ -1,4 +1,29 @@
 {{ template "header.html" .}}
+<br>
+<nav aria-label="Page navigation example">
+    <ul class="pagination">
+        {{ if (gt .pagination.CurrPage 1)}}
+            <li class="page-item">
+                <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.PrevPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {{ else }}
+            <li class="page-item disabled">
+                <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.PrevPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {{ end }}
+
+        <li class="page-item">
+            <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.NextPage }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<br>
 <div class="row">
     {{ range .values}}
         <div class="col-sm-6 mb-3 mb-sm-3">
@@ -7,11 +32,34 @@
                 <div class="card-body">
                     <h5 class="card-title fw-bold">{{ .Method }} | {{ .Url }}</h5>
                     <p class="card-text">{{ .Description }}</p>
-                    <a href="#" class="card-link">More info</a>
+                    <a href="#" class="card-link">More info {{ .Id }}</a>
                 </div>
             </div>
         </div>
     {{ end }}
 </div>
+<br>
+<nav aria-label="Page navigation example">
+    <ul class="pagination">
+        {{ if (gt .pagination.CurrPage 1)}}
+            <li class="page-item">
+                <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.PrevPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {{ else }}
+            <li class="page-item disabled">
+                <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.PrevPage }}" aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {{ end }}
 
+        <li class="page-item">
+            <a class="page-link" href="/scan/alerts/{{ .cwe_id }}/{{ .pagination.NextPage }}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
 {{ template "footer.html" .}}

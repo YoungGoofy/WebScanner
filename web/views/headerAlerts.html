@@ -24,7 +24,7 @@
         {{ range .alerts }}
             <li class="list-group-item d-flex justify-content-between align-items-start">
                 <div class="ms-2 me-auto">
-                    <div class="fw-bold"><a href="/scan/alerts/{{ .CweId }}">{{ .Name }}</a></div>
+                    <div class="fw-bold"><a href="/scan/alerts/{{ .CweId }}/1">{{ .Name }}</a></div>
                 </div>
                 <span class="badge text-bg-primary rounded-pill">{{ .Count }}</span>
             </li>
