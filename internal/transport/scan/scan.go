@@ -53,10 +53,30 @@ func (s *Scanner) StartScan(c *gin.Context) {
 	s.ActiveScanner = *ascan
 }
 
-func (s *Scanner) StopScan(c *gin.Context) {
-	err := s.ActiveScanner.StopScan()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+func (s *Scanner) HandleAction(c *gin.Context) {
+	action := c.Param("action")
+
+	switch action {
+	case "stop":
+		err := s.ActiveScanner.StopScan()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	case "pause":
+		err := s.ActiveScanner.PauseScan()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	case "resume":
+		err := s.ActiveScanner.ResumeScan()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid action"})
 		return
 	}
 }

@@ -3,7 +3,8 @@
         <div class="row">
             <label for="inputUrl" class="form-label">URL</label>
             <div class="input-group mb-3">
-                <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2" id="inputUrl">
+                <input type="text" class="form-control" placeholder="Recipient's username"
+                       aria-label="Recipient's username" aria-describedby="button-addon2" id="inputUrl">
                 <button class="btn btn-outline-secondary" type="submit" id="submitButton">Start</button>
             </div>
         </div>
@@ -11,9 +12,12 @@
 </form>
 
 <br>
-<form action="/stop" method="post" id="stopForm">
-    <button class="btn btn-danger" type="submit" id="stopButton">Stop</button>
-</form>
+
+<div class="btn-group" role="group" aria-label="Basic outlined example">
+    <button class="btn btn-outline-primary action-button" type="submit" id="stopButton" data-action="stop">Stop</button>
+    <button class="btn btn-outline-primary action-button" type="submit" id="pauseButton" data-action="pause">Pause</button>
+    <button class="btn btn-outline-primary action-button" type="submit" id="resumeButton" data-action="resume">Resume</button>
+</div>
 
 <div class="progress">
     <div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="60"
@@ -133,12 +137,16 @@
 </script>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById("stopButton").addEventListener("click", function(event) {
+    document.querySelectorAll(".action-button").forEach(function(button) {
+        button.addEventListener("click", function(event) {
             event.preventDefault(); // Предотвращаем стандартное действие кнопки submit
 
+            var action = button.dataset.action; // Получаем значение атрибута data-action
+
+            var url = "/action/" + action; // Формируем URL для отправки POST запроса
+
             var xhr = new XMLHttpRequest();
-            xhr.open("POST", "/stop", true);
+            xhr.open("POST", url, true);
             xhr.setRequestHeader("Content-Type", "application/json");
 
             xhr.onreadystatechange = function() {
