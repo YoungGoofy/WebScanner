@@ -28,4 +28,5 @@ func MainHandler(api *gin.Engine) {
 		})
 	})
 	api.POST("/settings/addKey", postAPIKey)
+	api.POST("/stop", s.StopScan)
 }

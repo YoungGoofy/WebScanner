@@ -11,8 +11,8 @@ func Run() {
 	//router.Use(static.Serve("/", static.LocalFile("./web/views", true)))
 	router.LoadHTMLGlob("web/views/*")
 	transport.MainHandler(router)
+	log.Println("Listening server on: http://localhost:3000")
 	if err := router.Run(":3000"); err != nil {
 		log.Println(err)
 	}
-	log.Println("Listening server on: http://localhost:3000")
 }

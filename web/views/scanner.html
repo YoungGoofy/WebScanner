@@ -4,13 +4,16 @@
             <label for="inputUrl" class="form-label">URL</label>
             <div class="input-group mb-3">
                 <input type="text" class="form-control" placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2" id="inputUrl">
-                <button class="btn btn-outline-secondary" type="submit" id="submitButton">Button</button>
+                <button class="btn btn-outline-secondary" type="submit" id="submitButton">Start</button>
             </div>
         </div>
     </div>
 </form>
 
 <br>
+<form action="/stop" method="post" id="stopForm">
+    <button class="btn btn-danger" type="submit" id="stopButton">Stop</button>
+</form>
 
 <div class="progress">
     <div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar" aria-valuenow="60"
@@ -127,4 +130,29 @@
             tbody.appendChild(newRow);
         }
     }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("stopButton").addEventListener("click", function(event) {
+            event.preventDefault(); // Предотвращаем стандартное действие кнопки submit
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "/stop", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        // Обработка успешного ответа от сервера
+                        console.log(xhr.responseText);
+                    } else {
+                        console.error('There has been a problem with your XMLHttpRequest:', xhr.statusText);
+                    }
+                }
+            };
+
+            xhr.send();
+        });
+    });
 </script>
