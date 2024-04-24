@@ -1,0 +1,11 @@
+{{ template "header.html" }}
+<h1>Name: {{ .value.Name }}<br>ID: {{ .value.ID }}</h1>
+<p>{{ .value.Method }} {{ .value.URL }}</p>
+<div>Description:
+    <p>{{ .value.Description }}</p>
+</div>
+<p>Danger level: {{ .value.Risk }}</p>
+<p>Info about this error: <br>{{ .value.Reference }}</p>
+<p>Plugin: {{ .value.PluginID }}</p>
+<p>Solution: {{ .value.Solution }}</p>
+{{ template "footer.html" }}

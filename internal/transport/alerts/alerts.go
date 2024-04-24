@@ -3,6 +3,7 @@ package alerts
 import (
 	"github.com/YoungGoofy/WebScanner/internal/transport/scan"
 	"github.com/YoungGoofy/gozap/pkg/gozap"
+	"github.com/YoungGoofy/gozap/pkg/gozap/alerts"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -17,15 +18,11 @@ type (
 		CweId             string
 		Count             int
 		Name              string
-		TotalCommonAlerts []struct {
-			Id          string
-			Method      string
-			Url         string
-			Description string
-		}
+		TotalCommonAlerts []alerts.Alert
 	}
 	groupOfCommonAlerts struct {
-		CommonAlerts []CommonAlert
+		CommonAlerts       []CommonAlert
+		actualListOfAlerts []alerts.Alert
 	}
 )
 
@@ -41,7 +38,7 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 			"error": err.Error(),
 		})
 	}
-	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32)}
+	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32), make([]alerts.Alert, 0, 32)}
 	err = a.groupOfCommonAlerts.commonAlerts(countOfAlerts, main)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -66,30 +63,15 @@ func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.Main
 		found := false
 		for i, listItem := range g.CommonAlerts {
 			if listItem.CweId == item.CweId {
-				g.CommonAlerts[i].TotalCommonAlerts = append(g.CommonAlerts[i].TotalCommonAlerts, struct {
-					Id          string
-					Method      string
-					Url         string
-					Description string
-				}{Id: item.ID, Method: item.Method, Url: item.URL, Description: item.Description})
+				g.CommonAlerts[i].TotalCommonAlerts = append(g.CommonAlerts[i].TotalCommonAlerts, item)
 				g.CommonAlerts[i].Count++
 				found = true
 				break
 			}
 		}
 		if !found {
-			var totalCommonAlerts = make([]struct {
-				Id          string
-				Method      string
-				Url         string
-				Description string
-			}, 0, 256)
-			totalCommonAlerts = append(totalCommonAlerts, struct {
-				Id          string
-				Method      string
-				Url         string
-				Description string
-			}{Id: item.ID, Method: item.Method, Url: item.URL, Description: item.Description})
+			var totalCommonAlerts = make([]alerts.Alert, 0, 256)
+			totalCommonAlerts = append(totalCommonAlerts, item)
 			tempItem := CommonAlert{CweId: item.CweId, Name: item.Alert, Count: 1, TotalCommonAlerts: totalCommonAlerts}
 			g.CommonAlerts = append(g.CommonAlerts, tempItem)
 		}
@@ -114,7 +96,7 @@ func (a *Alerts) GetTotalCommonAlerts(c *gin.Context) {
 		})
 	}
 
-	values := a.groupOfCommonAlerts.getAlertsFromId(cweId)
+	values := a.groupOfCommonAlerts.getAlertsFromCweId(cweId)
 	if values == nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "No cwe_id",
@@ -134,16 +116,36 @@ func (a *Alerts) GetTotalCommonAlerts(c *gin.Context) {
 	})
 }
 
-func (g *groupOfCommonAlerts) getAlertsFromId(cweId string) []struct {
-	Id          string
-	Method      string
-	Url         string
-	Description string
-} {
+func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []alerts.Alert {
 	for _, item := range g.CommonAlerts {
 		if cweId == item.CweId {
+			g.actualListOfAlerts = item.TotalCommonAlerts
 			return item.TotalCommonAlerts
 		}
 	}
 	return nil
+}
+
+func (a *Alerts) GetOnlyAlert(c *gin.Context) {
+	id := c.Param("id")
+	errorAlert := alerts.Alert{ID: "-1"}
+	value := a.groupOfCommonAlerts.getAlertFromId(id)
+	if value.ID == errorAlert.ID {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "No alert with this id",
+		})
+	}
+	c.HTML(http.StatusOK, "alert.html", gin.H{
+		"title": value.Alert,
+		"value": value,
+	})
+}
+
+func (g *groupOfCommonAlerts) getAlertFromId(id string) alerts.Alert {
+	for _, alert := range g.actualListOfAlerts {
+		if alert.ID == id {
+			return alert
+		}
+	}
+	return alerts.Alert{ID: "-1"}
 }

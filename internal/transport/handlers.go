@@ -20,6 +20,7 @@ func MainHandler(api *gin.Engine) {
 	api.GET("/scan", s.StartScan)
 	api.GET("/scan/alerts", a.GetAlerts)
 	api.GET("/scan/alerts/:cwe_id/:page", a.GetTotalCommonAlerts)
+	api.GET("/alert/:id", a.GetOnlyAlert)
 	api.GET("/settings", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "settings.html", gin.H{
 			"title": "Settings Page",
