@@ -3,7 +3,7 @@ package alerts
 import (
 	"github.com/YoungGoofy/WebScanner/internal/transport/scan"
 	"github.com/YoungGoofy/gozap/pkg/gozap"
-	"github.com/YoungGoofy/gozap/pkg/gozap/alerts"
+	"github.com/YoungGoofy/gozap/pkg/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
@@ -18,11 +18,11 @@ type (
 		CweId             string
 		Count             int
 		Name              string
-		TotalCommonAlerts []alerts.Alert
+		TotalCommonAlerts []models.Alert
 	}
 	groupOfCommonAlerts struct {
 		CommonAlerts       []CommonAlert
-		actualListOfAlerts []alerts.Alert
+		actualListOfAlerts []models.Alert
 	}
 )
 
@@ -38,7 +38,7 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 			"error": err.Error(),
 		})
 	}
-	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32), make([]alerts.Alert, 0, 32)}
+	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32), make([]models.Alert, 0, 32)}
 	err = a.groupOfCommonAlerts.commonAlerts(countOfAlerts, main)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -70,7 +70,7 @@ func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.Main
 			}
 		}
 		if !found {
-			var totalCommonAlerts = make([]alerts.Alert, 0, 256)
+			var totalCommonAlerts = make([]models.Alert, 0, 256)
 			totalCommonAlerts = append(totalCommonAlerts, item)
 			tempItem := CommonAlert{CweId: item.CweId, Name: item.Alert, Count: 1, TotalCommonAlerts: totalCommonAlerts}
 			g.CommonAlerts = append(g.CommonAlerts, tempItem)
@@ -116,7 +116,7 @@ func (a *Alerts) GetTotalCommonAlerts(c *gin.Context) {
 	})
 }
 
-func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []alerts.Alert {
+func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []models.Alert {
 	for _, item := range g.CommonAlerts {
 		if cweId == item.CweId {
 			g.actualListOfAlerts = item.TotalCommonAlerts
@@ -128,7 +128,7 @@ func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []alerts.Alert {
 
 func (a *Alerts) GetOnlyAlert(c *gin.Context) {
 	id := c.Param("id")
-	errorAlert := alerts.Alert{ID: "-1"}
+	errorAlert := models.Alert{ID: "-1"}
 	value := a.groupOfCommonAlerts.getAlertFromId(id)
 	if value.ID == errorAlert.ID {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -141,11 +141,11 @@ func (a *Alerts) GetOnlyAlert(c *gin.Context) {
 	})
 }
 
-func (g *groupOfCommonAlerts) getAlertFromId(id string) alerts.Alert {
+func (g *groupOfCommonAlerts) getAlertFromId(id string) models.Alert {
 	for _, alert := range g.actualListOfAlerts {
 		if alert.ID == id {
 			return alert
 		}
 	}
-	return alerts.Alert{ID: "-1"}
+	return models.Alert{ID: "-1"}
 }

@@ -5,16 +5,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"sync"
+	"time"
 )
 
 type Scanner struct {
-	MainScanner gozap.MainScan
+	MainScanner    gozap.MainScan
+	PassiveScanner gozap.Spider
+	ActiveScanner  gozap.ActiveScanner
 }
 
 func NewScanner(apiKey string) *Scanner {
-	newScan := gozap.NewMainScan("", apiKey)
-	//newSpider := gozap.NewSpider(*newScan)
-	return &Scanner{*newScan}
+	newScan := gozap.NewMainScan()
+	newScan.AddApiKey(apiKey)
+
+	return &Scanner{MainScanner: *newScan}
 }
 
 func (s *Scanner) StartScan(c *gin.Context) {
@@ -28,7 +32,8 @@ func (s *Scanner) StartScan(c *gin.Context) {
 	}
 	s.MainScanner.AddUrl(newUrl.Url)
 	spider := gozap.NewSpider(s.MainScanner)
-	if err := spider.GetSessionId(); err != nil {
+	ascan := gozap.NewActiveScanner(s.MainScanner)
+	if err := spider.StartPassiveScan(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -42,9 +47,18 @@ func (s *Scanner) StartScan(c *gin.Context) {
 	// Отправляем начальное состояние сканирования
 	ssEventStatus(c, "0", false)
 
-	checkStatus(c, spider, &wg)
+	outputPassiveScan(c, spider, ascan, &wg)
 
 	ssEventStatus(c, "100", true)
+	s.ActiveScanner = *ascan
+}
+
+func (s *Scanner) StopScan(c *gin.Context) {
+	err := s.ActiveScanner.StopScan()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 }
 
 func ssEventStatus(c *gin.Context, progressPercentage string, completed bool) {
@@ -55,18 +69,19 @@ func ssEventStatus(c *gin.Context, progressPercentage string, completed bool) {
 	c.Writer.Flush()
 }
 
-func checkStatus(c *gin.Context, spider *gozap.Spider, wg *sync.WaitGroup) {
+func outputPassiveScan(c *gin.Context, spider *gozap.Spider, ascan *gozap.ActiveScanner, wg *sync.WaitGroup) {
 	dataCh := make(chan gozap.UrlsInScope)
 	errCh := make(chan error)
 	statusCh := make(chan string)
 	done := make(chan struct{})
+	ticker := time.Tick(250 * time.Millisecond)
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		spider.AsyncGetResult(dataCh, errCh, statusCh, done)
 	}()
-	for {
+	for range ticker {
 		select {
 		case urls := <-dataCh:
 			for _, url := range urls {
@@ -88,6 +103,7 @@ func checkStatus(c *gin.Context, spider *gozap.Spider, wg *sync.WaitGroup) {
 		case status := <-statusCh:
 			ssEventStatus(c, status, false)
 			if status == "100" {
+				_ = ascan.StartActiveScan()
 				close(done)
 			}
 		case <-done:
