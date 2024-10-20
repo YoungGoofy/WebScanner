@@ -1,8 +1,8 @@
 package transport
 
 import (
-	"github.com/YoungGoofy/WebScanner/internal/transport/alerts"
-	"github.com/YoungGoofy/WebScanner/internal/transport/scan"
+	"github.com/YoungGoofy/WebScanner/internal/services/alerts"
+	"github.com/YoungGoofy/WebScanner/internal/services/scan"
 	"github.com/YoungGoofy/WebScanner/internal/utils/toml"
 	"github.com/gin-gonic/gin"
 	"net/http"

@@ -1,7 +1,7 @@
 package alerts
 
 import (
-	"github.com/YoungGoofy/WebScanner/internal/transport/scan"
+	"github.com/YoungGoofy/WebScanner/internal/services/scan"
 	"github.com/YoungGoofy/gozap/pkg/gozap"
 	"github.com/YoungGoofy/gozap/pkg/models"
 	"github.com/gin-gonic/gin"
