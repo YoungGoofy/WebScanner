@@ -9,7 +9,7 @@ import (
 func Run() {
 	router := gin.Default()
 	//router.Use(static.Serve("/", static.LocalFile("./web/views", true)))
-	router.LoadHTMLGlob("web/views/*")
+	router.LoadHTMLGlob("frontend/*")
 	transport.MainHandler(router)
 	log.Println("Listening server on: http://localhost:3000")
 	if err := router.Run(":3000"); err != nil {

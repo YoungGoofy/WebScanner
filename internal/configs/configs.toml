@@ -1,2 +1,5 @@
 [api]
-key = 'vggv0fl90debphkinn0l582mck'
+key = 'p2uhlfeeje4p1c6ls725bs3p22'
+
+[urlForTests]
+url = 'https://public-firing-range.appspot.com'
