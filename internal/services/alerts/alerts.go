@@ -2,7 +2,8 @@ package alerts
 
 import (
 	"net/http"
-	"strconv"
+	"sync"
+	"time"
 
 	"github.com/YoungGoofy/WebScanner/internal/services/scan"
 	"github.com/YoungGoofy/gozap/pkg/gozap"
@@ -12,12 +13,8 @@ import (
 
 type (
 	Alerts struct {
-		s     *scan.Scanner
-		risks map[string][]CommonAlert
-	}
-	groupOfCommonAlerts struct {
-		CommonAlerts       []CommonAlert
-		actualListOfAlerts []models.Alert
+		scanner *scan.Scanner
+		risks   map[string][]CommonAlert
 	}
 	CommonAlert struct {
 		CweId             string
@@ -30,81 +27,129 @@ type (
 
 func NewAlerts(scanner scan.Scanner) *Alerts {
 	r := make(map[string][]CommonAlert)
-	return &Alerts{s: &scanner, risks: r}
+	return &Alerts{scanner: &scanner, risks: r}
 }
 
 func (a *Alerts) GetAlerts(c *gin.Context) {
-	main := a.s.MainScanner
-	countOfAlerts, err := main.CountOfAlerts()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+
+	main := a.scanner.MainScanner
+	ascan := a.scanner.ActiveScanner
+
+	var wg sync.WaitGroup
+	lastAlertCh := make(chan CommonAlert)
+	errCh := make(chan error)
+	statusCh := make(chan string)
+	done := make(chan struct{})
+	ticker := time.Tick(250 * time.Millisecond)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		commonRisks(main, ascan, lastAlertCh, errCh, statusCh, done)
+	}()
+
+	for range ticker {
+		select {
+		case alert := <-lastAlertCh:
+			count := alert.Count
+			name := alert.Name
+			risk := alert.Risk
+
+			c.SSEvent("results", map[string]any{
+				"count": count,
+				"name":  name,
+				"risk":  risk,
+			})
+			c.Writer.Flush()
+		case err := <-errCh:
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": err.Error(),
+			})
+		case status := <-statusCh:
+			if status == "100" {
+				close(done)
+			}
+		case <-done:
+			wg.Wait()
+			close(lastAlertCh)
+			close(errCh)
+			close(statusCh)
+			return
+		}
 	}
 
-	a.risks, err = commonRisks(countOfAlerts, main)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-	}
-	c.JSON(http.StatusOK, gin.H{
-		"title": "Alerts",
-		"risks": a.risks,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"title": "Alerts",
+	// 	"risks": a.risks,
+	// })
 }
 
-func commonRisks(countOfAlerts string, main gozap.MainScan) (map[string][]CommonAlert, error) {
-	listOfAlerts, err := main.GetAlerts("0", countOfAlerts)
-	if err != nil {
-		return nil, err
-	}
-	riskMap := map[string][]CommonAlert{
-		"Informational": {},
-		"Low":           {},
-		"Medium":        {},
-		"High":          {},
-	}
+func commonRisks(main gozap.MainScan,
+	ascan gozap.ActiveScanner,
+	lastAlertCh chan<- CommonAlert,
+	errCh chan<- error,
+	statusCh chan string,
+	done <-chan struct{}) {
+
+	maxCount := 0
+	minCount := 0
 
 	// Создаем мапу для хранения уникальных CweId с массивом всех TotalCommonAlerts
 	alertMap := make(map[string]*CommonAlert)
 
-	for _, item := range listOfAlerts.Alert {
-		// riskLevel := item.Risk // определяем уровень риска для текущего алерта
-		// Проверяем, существует ли уже алерт с этим CweId
-		if existingAlert, exists := alertMap[item.CweId]; exists {
-			existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
-			existingAlert.Count++
-		} else {
-			// Создаем новый алерт и добавляем его в список соответствующего уровня риска
-			totalCommonAlerts := make([]models.Alert, 0, 256)
-			totalCommonAlerts = append(totalCommonAlerts, item)
-			newAlert := CommonAlert{
-				CweId:             item.CweId,
-				Name:              item.Alert,
-				Count:             1,
-				Risk:              item.Risk,
-				TotalCommonAlerts: totalCommonAlerts,
+	for {
+		select {
+		case <-done:
+			return
+		default:
+			listOfAlerts, err := main.GetAlerts("0")
+			if err != nil {
+				errCh <- err
 			}
+			if len(listOfAlerts.Alert) > maxCount {
+				maxCount = len(listOfAlerts.Alert)
+			} else {
+				continue
+			}
+			if len(listOfAlerts.Alert) > 0 {
+				// Проверяем, существует ли уже алерт с этим CweId
+				for _, item := range listOfAlerts.Alert[minCount : maxCount-1] {
+					if existingAlert, exists := alertMap[item.CweId]; exists {
+						existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
+						existingAlert.Count++
+						lastAlertCh <- *existingAlert
+					} else {
+						// Создаем новый алерт и добавляем его в список соответствующего уровня риска
+						totalCommonAlerts := make([]models.Alert, 0, 256)
+						totalCommonAlerts = append(totalCommonAlerts, item)
+						newAlert := CommonAlert{
+							CweId:             item.CweId,
+							Name:              item.Alert,
+							Count:             1,
+							Risk:              item.Risk,
+							TotalCommonAlerts: totalCommonAlerts,
+						}
 
-			// Добавляем новый алерт в alertMap и соответствующий уровень риска
-			alertMap[item.CweId] = &newAlert
-			// riskMap[riskLevel] = append(riskMap[riskLevel], newAlert)
+						// Добавляем новый алерт в alertMap и соответствующий уровень риска
+						alertMap[item.CweId] = &newAlert
+						lastAlertCh <- newAlert
+					}
+				}
+			}
+			minCount = maxCount - 1
 		}
+		status, err := ascan.GetStatus()
+		if err != nil {
+			errCh <- err
+		}
+		statusCh <- status
 	}
-
-	for _, alert := range alertMap {
-		riskMap[alert.Risk] = append(riskMap[alert.Risk], *alert)
-	}
-
-	return riskMap, nil
 }
 
-
-
-
-
-type Pagination struct {
+/* type Pagination struct {
 	PrevPage int
 	NextPage int
 	CurrPage int
@@ -173,4 +218,4 @@ func (g *groupOfCommonAlerts) getAlertFromId(id string) models.Alert {
 		}
 	}
 	return models.Alert{ID: "-1"}
-}
+} */
