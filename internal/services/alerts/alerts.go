@@ -1,33 +1,36 @@
 package alerts
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/YoungGoofy/WebScanner/internal/services/scan"
 	"github.com/YoungGoofy/gozap/pkg/gozap"
 	"github.com/YoungGoofy/gozap/pkg/models"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 type (
 	Alerts struct {
-		s                   *scan.Scanner
-		groupOfCommonAlerts groupOfCommonAlerts
-	}
-	CommonAlert struct {
-		CweId             string
-		Count             int
-		Name              string
-		TotalCommonAlerts []models.Alert
+		s     *scan.Scanner
+		risks map[string][]CommonAlert
 	}
 	groupOfCommonAlerts struct {
 		CommonAlerts       []CommonAlert
 		actualListOfAlerts []models.Alert
 	}
+	CommonAlert struct {
+		CweId             string
+		Count             int
+		Name              string
+		Risk              string
+		TotalCommonAlerts []models.Alert
+	}
 )
 
 func NewAlerts(scanner scan.Scanner) *Alerts {
-	return &Alerts{s: &scanner}
+	r := make(map[string][]CommonAlert)
+	return &Alerts{s: &scanner, risks: r}
 }
 
 func (a *Alerts) GetAlerts(c *gin.Context) {
@@ -38,46 +41,68 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 			"error": err.Error(),
 		})
 	}
-	a.groupOfCommonAlerts = groupOfCommonAlerts{make([]CommonAlert, 0, 32), make([]models.Alert, 0, 32)}
-	err = a.groupOfCommonAlerts.commonAlerts(countOfAlerts, main)
+
+	a.risks, err = commonRisks(countOfAlerts, main)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 	}
-	c.HTML(http.StatusOK, "headerAlerts.html", gin.H{
-		"title":  "Alerts",
-		"count":  countOfAlerts,
-		"alerts": a.groupOfCommonAlerts.CommonAlerts,
+	c.JSON(http.StatusOK, gin.H{
+		"title": "Alerts",
+		"risks": a.risks,
 	})
 }
 
-func (g *groupOfCommonAlerts) commonAlerts(countOfAlerts string, main gozap.MainScan) error {
-
+func commonRisks(countOfAlerts string, main gozap.MainScan) (map[string][]CommonAlert, error) {
 	listOfAlerts, err := main.GetAlerts("0", countOfAlerts)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	riskMap := map[string][]CommonAlert{
+		"Informational": {},
+		"Low":           {},
+		"Medium":        {},
+		"High":          {},
 	}
 
+	// Создаем мапу для хранения уникальных CweId с массивом всех TotalCommonAlerts
+	alertMap := make(map[string]*CommonAlert)
+
 	for _, item := range listOfAlerts.Alert {
-		found := false
-		for i, listItem := range g.CommonAlerts {
-			if listItem.CweId == item.CweId {
-				g.CommonAlerts[i].TotalCommonAlerts = append(g.CommonAlerts[i].TotalCommonAlerts, item)
-				g.CommonAlerts[i].Count++
-				found = true
-				break
-			}
-		}
-		if !found {
-			var totalCommonAlerts = make([]models.Alert, 0, 256)
+		// riskLevel := item.Risk // определяем уровень риска для текущего алерта
+		// Проверяем, существует ли уже алерт с этим CweId
+		if existingAlert, exists := alertMap[item.CweId]; exists {
+			existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
+			existingAlert.Count++
+		} else {
+			// Создаем новый алерт и добавляем его в список соответствующего уровня риска
+			totalCommonAlerts := make([]models.Alert, 0, 256)
 			totalCommonAlerts = append(totalCommonAlerts, item)
-			tempItem := CommonAlert{CweId: item.CweId, Name: item.Alert, Count: 1, TotalCommonAlerts: totalCommonAlerts}
-			g.CommonAlerts = append(g.CommonAlerts, tempItem)
+			newAlert := CommonAlert{
+				CweId:             item.CweId,
+				Name:              item.Alert,
+				Count:             1,
+				Risk:              item.Risk,
+				TotalCommonAlerts: totalCommonAlerts,
+			}
+
+			// Добавляем новый алерт в alertMap и соответствующий уровень риска
+			alertMap[item.CweId] = &newAlert
+			// riskMap[riskLevel] = append(riskMap[riskLevel], newAlert)
 		}
 	}
-	return nil
+
+	for _, alert := range alertMap {
+		riskMap[alert.Risk] = append(riskMap[alert.Risk], *alert)
+	}
+
+	return riskMap, nil
 }
+
+
+
+
 
 type Pagination struct {
 	PrevPage int
@@ -85,7 +110,7 @@ type Pagination struct {
 	CurrPage int
 }
 
-func (a *Alerts) GetTotalCommonAlerts(c *gin.Context) {
+func GetTotalCommonAlerts(c *gin.Context) {
 	cweId := c.Param("cwe_id")
 	page, err := strconv.Atoi(c.Param("page"))
 	startIndex := (page - 1) * 25
@@ -126,7 +151,7 @@ func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []models.Alert {
 	return nil
 }
 
-func (a *Alerts) GetOnlyAlert(c *gin.Context) {
+func GetOnlyAlert(c *gin.Context) {
 	id := c.Param("id")
 	errorAlert := models.Alert{ID: "-1"}
 	value := a.groupOfCommonAlerts.getAlertFromId(id)

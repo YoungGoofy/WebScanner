@@ -38,7 +38,7 @@
                 <h1>Название</h1>
             </div>
             <div class="col-4">
-                <form name="inputKey" id="inputKeyForm">
+                <form id="inputKeyForm">
                     <div class="row">
                         <div class="col-8">
                             <input type="text" class="form-control" id="apiKeyInput"
@@ -53,7 +53,7 @@
         </div>
 
         <!-- Ввод ссылки -->
-        <form onsubmit="submitForm(event)" name="inputKey" method="get">
+        <form onsubmit="submitForm(event)" method="get">
             <div class="row align-items-center mt-3">
                 <div class="col-4">
                     <input type="text" class="form-control" placeholder="Введите ссылку на сайт"
@@ -72,195 +72,195 @@
                 <!-- Прогрессбар -->
                 <div class="progress mb-3">
                     <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                        style="width: 0%;" aria-valuenow="0"</div>
-                    </div>
-                    <!-- Вывод ссылок -->
-                    <div class="border p-2" style="height: 600px; overflow-y: scroll;">
-                        <table class="table" id="t_table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">#</th>
-                                    <th scope="col">Processed</th>
-                                    <th scope="col">Status Reason</th>
-                                    <th scope="col">Method</th>
-                                    <th scope="col">Reason Not Processed</th>
-                                    <th scope="col">Message Id</th>
-                                    <th scope="col">Url</th>
-                                    <th scope="col">Status Code</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tbody">
+                        style="width: 0%;" aria-valuenow="0"></div>
+                </div>
+                <!-- Вывод ссылок -->
+                <div class="border p-2" style="height: 600px; overflow-y: scroll;">
+                    <table class="table" id="t_table">
+                        <thead>
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">Processed</th>
+                                <th scope="col">Status Reason</th>
+                                <th scope="col">Method</th>
+                                <th scope="col">Reason Not Processed</th>
+                                <th scope="col">Message Id</th>
+                                <th scope="col">Url</th>
+                                <th scope="col">Status Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody">
 
-                            </tbody>
-                        </table>
-                    </div>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Блоки 2 и 3: Уязвимости и подробности -->
+            <div class="col-6">
+                <!-- Блок 2: Уязвимости -->
+                <div class="border p-2 mb-3" style="height: 300px; overflow-y: scroll;">
+                    <h5>Уязвимости</h5>
+                    <ul class="list-unstyled">
+                        <li>
+                            <a href="#!" data-toggle="collapse" data-target="#info-list">Info</a>
+                            <ul id="info-list" class="collapse list-unstyled ml-4">
+                                <li>Уязвимость 1</li>
+                                <li>Уязвимость 2</li>
+                                <li>Уязвимость 3</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#!" data-toggle="collapse" data-target="#low-list">Low</a>
+                            <ul id="low-list" class="collapse list-unstyled ml-4">
+                                <li>Уязвимость 1</li>
+                                <li>Уязвимость 2</li>
+                                <li>Уязвимость 3</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#!" data-toggle="collapse" data-target="#middle-list">Middle</a>
+                            <ul id="middle-list" class="collapse list-unstyled ml-4">
+                                <li>Уязвимость 1</li>
+                                <li>Уязвимость 2</li>
+                                <li>Уязвимость 3</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#!" data-toggle="collapse" data-target="#hard-list">Hard</a>
+                            <ul id="hard-list" class="collapse list-unstyled ml-4">
+                                <li>Уязвимость 1</li>
+                                <li>Уязвимость 2</li>
+                                <li>Уязвимость 3</li>
+                            </ul>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Блоки 2 и 3: Уязвимости и подробности -->
-                <div class="col-6">
-                    <!-- Блок 2: Уязвимости -->
-                    <div class="border p-2 mb-3" style="height: 300px; overflow-y: scroll;">
-                        <h5>Уязвимости</h5>
-                        <ul class="list-unstyled">
-                            <li>
-                                <a href="#!" data-toggle="collapse" data-target="#info-list">Info</a>
-                                <ul id="info-list" class="collapse list-unstyled ml-4">
-                                    <li>Уязвимость 1</li>
-                                    <li>Уязвимость 2</li>
-                                    <li>Уязвимость 3</li>
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="#!" data-toggle="collapse" data-target="#low-list">Low</a>
-                                <ul id="low-list" class="collapse list-unstyled ml-4">
-                                    <li>Уязвимость 1</li>
-                                    <li>Уязвимость 2</li>
-                                    <li>Уязвимость 3</li>
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="#!" data-toggle="collapse" data-target="#middle-list">Middle</a>
-                                <ul id="middle-list" class="collapse list-unstyled ml-4">
-                                    <li>Уязвимость 1</li>
-                                    <li>Уязвимость 2</li>
-                                    <li>Уязвимость 3</li>
-                                </ul>
-                            </li>
-                            <li>
-                                <a href="#!" data-toggle="collapse" data-target="#hard-list">Hard</a>
-                                <ul id="hard-list" class="collapse list-unstyled ml-4">
-                                    <li>Уязвимость 1</li>
-                                    <li>Уязвимость 2</li>
-                                    <li>Уязвимость 3</li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <!-- Блок 3: Подробная информация об уязвимости -->
-                    <div class="border p-2" style="height: 300px;">
-                        <h5>Подробная информация об уязвимости</h5>
-                        <p id="vulnerability-details">Здесь будет выводиться информация о выбранной уязвимости.</p>
-                    </div>
+                <!-- Блок 3: Подробная информация об уязвимости -->
+                <div class="border p-2" style="height: 300px;">
+                    <h5>Подробная информация об уязвимости</h5>
+                    <p id="vulnerability-details">Здесь будет выводиться информация о выбранной уязвимости.</p>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Подключение Bootstrap JS -->
-        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- Подключение Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 
-        <script>
-            document.getElementById('inputKeyForm').addEventListener('submit', async function (event) {
-                event.preventDefault(); // Отменяем стандартное поведение отправки формы
+    <script>
+        document.getElementById('inputKeyForm').addEventListener('submit', async function (event) {
+            event.preventDefault(); // Отменяем стандартное поведение отправки формы
 
-                const submitButton = document.getElementById('submitButton');
-                submitButton.disabled = true; // Блокируем кнопку
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true; // Блокируем кнопку
 
-                const apiKey = document.getElementById('apiKeyInput').value;
+            const apiKey = document.getElementById('apiKeyInput').value;
 
-                try {
-                    const response = await fetch('/addKey', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: new URLSearchParams({ apiKey }),
-                    });
+            try {
+                const response = await fetch('/addKey', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ apiKey }),
+                });
 
-                    if (response.ok) {
-                        const result = await response.json();
-                        alert('API ключ успешно сохранен');
-                        // Если нужно, можно обновить страницу или сделать что-то ещё
-                    } else {
-                        const error = await response.json();
-                        alert('Ошибка: ' + error.error);
-                    }
-                } catch (err) {
-                    console.error('Ошибка запроса:', err);
-                    alert('Не удалось сохранить API ключ');
-                } finally {
-                    submitButton.disabled = false; // Разблокировать кнопку
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('API ключ успешно сохранен');
+                    // Если нужно, можно обновить страницу или сделать что-то ещё
+                } else {
+                    const error = await response.json();
+                    alert('Ошибка: ' + error.error);
+                }
+            } catch (err) {
+                console.error('Ошибка запроса:', err);
+                alert('Не удалось сохранить API ключ');
+            } finally {
+                submitButton.disabled = false; // Разблокировать кнопку
+            }
+        });
+
+        function submitForm(event) {
+            event.preventDefault();
+
+            const submitButton = document.getElementById('submitButton');
+            submitButton.disabled = true;
+
+            const inputUrlElement = document.getElementById('inputUrl');
+            const urlValue = inputUrlElement.value;
+            const evenSourceUrl = 'scan?url=' + encodeURIComponent(urlValue);
+
+            const eventSource = new EventSource(evenSourceUrl);
+
+            eventSource.addEventListener('progress', function (event) {
+                const data = JSON.parse(event.data);
+
+                console.log('Received progress event:', data);
+
+                if (data.progressPercentage != "0") {
+                    progressBar(data);
+                    console.log('Updating progress bar...');
+                }
+
+                if (data.completed == true) {
+                    closeEventStream();
+                    console.log('Scan completed.');
                 }
             });
 
-            function submitForm(event) {
-                event.preventDefault();
+            eventSource.addEventListener('results', function (event) {
+                const data = JSON.parse(event.data);
+                // console.log('New data: ', data)
+                table(data)
+            });
 
-                const submitButton = document.getElementById('submitButton');
-                submitButton.disabled = true;
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                console.log('Received message:', data);
+            };
 
-                const inputUrlElement = document.getElementById('inputUrl');
-                const urlValue = inputUrlElement.value;
-                const evenSourceUrl = 'scan?url=' + encodeURIComponent(urlValue);
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+            };
 
-                const eventSource = new EventSource(evenSourceUrl);
+            // Either this or the one above
+            eventSource.addEventListener('error', (error) => {
+                console.error('SSE error:', error);
+            });
 
-                eventSource.addEventListener('progress', function (event) {
-                    const data = JSON.parse(event.data);
+            eventSource.onopen = () => {
+                console.log('SSE connection opened');
+            };
 
-                    console.log('Received progress event:', data);
+            eventSource.onclose = () => {
+                console.log('SSE connection closed');
+            };
 
-                    if (data.progressPercentage != "0") {
-                        progressBar(data);
-                        console.log('Updating progress bar...');
-                    }
+            function closeEventStream() {
+                console.log('Closing event stream...');
+                submitButton.disabled = false;
+                eventSource.close();
+            }
 
-                    if (data.completed == true) {
-                        closeEventStream();
-                        console.log('Scan completed.');
-                    }
-                });
+            function progressBar(data) {
+                // Get the progress bar element
+                const progressBar = document.getElementById('progress-bar');
+                progressBar.style.width = `${data.progressPercentage}%`;
 
-                eventSource.addEventListener('results', function (event) {
-                    const data = JSON.parse(event.data);
-                    // console.log('New data: ', data)
-                    table(data)
-                });
+                console.log('Updating progress bar:', data.progressPercentage);
+            }
 
-                eventSource.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    console.log('Received message:', data);
-                };
+            function table(data) {
+                const tbody = document.getElementById('tbody');
+                const newRow = document.createElement('tr');
 
-                eventSource.onerror = (error) => {
-                    console.error('SSE error:', error);
-                };
-
-                // Either this or the one above
-                eventSource.addEventListener('error', (error) => {
-                    console.error('SSE error:', error);
-                });
-
-                eventSource.onopen = () => {
-                    console.log('SSE connection opened');
-                };
-
-                eventSource.onclose = () => {
-                    console.log('SSE connection closed');
-                };
-
-                function closeEventStream() {
-                    console.log('Closing event stream...');
-                    submitButton.disabled = false;
-                    eventSource.close();
-                }
-
-                function progressBar(data) {
-                    // Get the progress bar element
-                    const progressBar = document.getElementById('progress-bar');
-                    progressBar.style.width = `${data.progressPercentage}%`;
-
-                    console.log('Updating progress bar:', data.progressPercentage);
-                }
-
-                function table(data) {
-                    const tbody = document.getElementById('tbody');
-                    const newRow = document.createElement('tr');
-
-                    newRow.innerHTML = `
+                newRow.innerHTML = `
             <th scope="row">${tbody.childElementCount + 1}</th>
             <td>${data.processed}</td>
             <td>${data.statusReason}</td>
@@ -271,10 +271,10 @@
             <td>${data.statusCode}</td>
         `;
 
-                    tbody.appendChild(newRow);
-                }
+                tbody.appendChild(newRow);
             }
-        </script>
+        }
+    </script>
 </body>
 
 </html>
