@@ -31,10 +31,6 @@ func NewAlerts(scanner scan.Scanner) *Alerts {
 }
 
 func (a *Alerts) GetAlerts(c *gin.Context) {
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-
 	main := a.scanner.MainScanner
 	ascan := a.scanner.ActiveScanner
 
@@ -57,11 +53,13 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 			count := alert.Count
 			name := alert.Name
 			risk := alert.Risk
-
-			c.SSEvent("results", map[string]any{
+			commonAlert := alert.TotalCommonAlerts
+			
+			c.SSEvent("alerts", map[string]any{
 				"count": count,
 				"name":  name,
 				"risk":  risk,
+				"commonAlert": commonAlert,
 			})
 			c.Writer.Flush()
 		case err := <-errCh:
