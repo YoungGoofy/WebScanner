@@ -167,6 +167,8 @@
 
             const eventSource = new EventSource(evenSourceUrl);
 
+            const alertEventSource = new EventSource('/alerts');
+
             eventSource.addEventListener('progress', function (event) {
                 const data = JSON.parse(event.data);
 
@@ -189,7 +191,7 @@
                 table(data)
             });
 
-            evenSource.addEventListener("alerts", function (event) {
+            alertEventSource.addEventListener("alerts", function (event) {
                 const data = JSON.parse(event.data);
                 addVulnerability(data)
             })
@@ -214,6 +216,14 @@
 
             eventSource.onclose = () => {
                 console.log('SSE connection closed');
+            };
+
+            alertEventSource.onerror = (error) => {
+                console.error('Alerts SSE error:', error);
+            };
+
+            alertEventSource.onopen = () => {
+                console.log('Alerts SSE connection opened');
             };
 
             function closeEventStream() {
@@ -248,57 +258,58 @@
                 tbody.appendChild(newRow);
             }
 
-            function list(data) {
+            function addVulnerability(data) {
+                const vulnerabilityList = document.getElementById('vulnerability-list');
 
-            }
-        }
-
-        function addVulnerability(data) {
-            const vulnerabilityList = document.getElementById('vulnerability-list');
-
-            // Проверка наличия секции для текущего уровня риска
-            let riskSection = document.getElementById(`risk-${data.risk}`);
-            if (!riskSection) {
-                // Создаем секцию для нового уровня риска
-                riskSection = document.createElement('li');
-                riskSection.id = `risk-${data.risk}`;
-                riskSection.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#list-${data.risk}">${data.risk}</a>
-                                 <ul id="list-${data.risk}" class="collapse list-unstyled ml-4"></ul>`;
-                vulnerabilityList.appendChild(riskSection);
-            }
-
-            const riskList = document.getElementById(`list-${data.risk}`);
-
-            // Проверка наличия элемента для конкретной уязвимости
-            let vulnItem = document.getElementById(`vuln-${data.risk}-${data.name}`);
-            if (!vulnItem) {
-                // Создаем новый элемент для уязвимости
-                vulnItem = document.createElement('li');
-                vulnItem.id = `vuln-${data.risk}-${data.name}`;
-                vulnItem.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#details-${data.risk}-${data.name}">${data.name} (${data.count})</a>
-                              <ul id="details-${data.risk}-${data.name}" class="collapse list-unstyled ml-4"></ul>`;
-                riskList.appendChild(vulnItem);
-            }
-
-            const vulnDetailsList = document.getElementById(`details-${data.risk}-${data.name}`);
-
-            // Добавляем только новые значения из commonAlerts
-            data.commonAlerts.forEach(alert => {
-                // Проверка наличия элемента для конкретного URL и метода
-                const existingAlert = Array.from(vulnDetailsList.children).find(item =>
-                    item.dataset.url === alert.URL && item.dataset.method === alert.Method
-                );
-
-                // Если элемент отсутствует, добавляем его
-                if (!existingAlert) {
-                    const alertItem = document.createElement('li');
-                    alertItem.dataset.url = alert.URL;
-                    alertItem.dataset.method = alert.Method;
-                    alertItem.textContent = `${alert.Method} - ${alert.URL}`;
-                    vulnDetailsList.appendChild(alertItem);
+                // Проверка наличия секции для текущего уровня риска
+                let riskSection = document.getElementById(`risk-${data.risk}`);
+                if (!riskSection) {
+                    riskSection = document.createElement('li');
+                    riskSection.id = `risk-${data.risk}`;
+                    riskSection.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#list-${data.risk}">${data.risk}</a>
+                                     <ul id="list-${data.risk}" class="collapse list-unstyled ml-4"></ul>`;
+                    vulnerabilityList.appendChild(riskSection);
                 }
-            });
+
+                const riskList = document.getElementById(`list-${data.risk}`);
+
+                let vulnItem = document.getElementById(`vuln-${data.risk}-${data.name}`);
+                if (!vulnItem) {
+                    vulnItem = document.createElement('li');
+                    vulnItem.id = `vuln-${data.risk}-${data.name}`;
+                    vulnItem.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#details-${data.risk}-${data.name}">${data.name}</a>
+                                  <ul id="details-${data.risk}-${data.name}" class="collapse list-unstyled ml-4"></ul>`;
+                    riskList.appendChild(vulnItem);
+                }
+
+                const vulnDetailsList = document.getElementById(`details-${data.risk}-${data.name}`);
+
+                // Проверка на дублирование элемента для данного URL и метода
+                
+                let lastVuln = document.getElementById(`vuln-${data.method}-${data.url}`)
+                if (!lastVuln) {
+                    const lastVuln = document.createElement('li');
+                    lastVuln.id = `${data.method}-${data.url}`;
+                    lastVuln.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#lastVuln-${data.method}-${data.url}">${data.method} ${data.url}</a>`;
+                    vulnDetailsList.appendChild(lastVuln);
+                }
+                // data.commonAlert.forEach(alert => {
+                //     const existingAlert = Array.from(vulnDetailsList.children).find(item =>
+                //         item.dataset.url === alert.URL && item.dataset.method === alert.Method
+                //     );
+
+                //     if (!existingAlert) {
+                //         const alertItem = document.createElement('li');
+                //         alertItem.dataset.url = alert.URL;
+                //         alertItem.dataset.method = alert.Method;
+                //         alertItem.textContent = `${alert.Method} - ${alert.URL}`;
+                //         vulnDetailsList.appendChild(alertItem);
+                //     }
+                // });
+            }
         }
+
+
     </script>
 </body>
 

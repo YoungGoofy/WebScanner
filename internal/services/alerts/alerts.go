@@ -31,11 +31,15 @@ func NewAlerts(scanner scan.Scanner) *Alerts {
 }
 
 func (a *Alerts) GetAlerts(c *gin.Context) {
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	
 	main := a.scanner.MainScanner
 	ascan := a.scanner.ActiveScanner
 
 	var wg sync.WaitGroup
-	lastAlertCh := make(chan CommonAlert)
+	lastAlertCh := make(chan models.Alert)
 	errCh := make(chan error)
 	statusCh := make(chan string)
 	done := make(chan struct{})
@@ -50,16 +54,15 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 	for range ticker {
 		select {
 		case alert := <-lastAlertCh:
-			count := alert.Count
-			name := alert.Name
-			risk := alert.Risk
-			commonAlert := alert.TotalCommonAlerts
-			
 			c.SSEvent("alerts", map[string]any{
-				"count": count,
-				"name":  name,
-				"risk":  risk,
-				"commonAlert": commonAlert,
+				"name":       alert.Name,
+				"risk":       alert.Risk,
+				"method":     alert.Method,
+				"url":        alert.URL,
+				"cweid":      alert.CweId,
+				"desciption": alert.Description,
+				"solution":   alert.Solution,
+				"attack":     alert.Attack,
 			})
 			c.Writer.Flush()
 		case err := <-errCh:
@@ -87,57 +90,52 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 
 func commonRisks(main gozap.MainScan,
 	ascan gozap.ActiveScanner,
-	lastAlertCh chan<- CommonAlert,
+	lastAlertCh chan<- models.Alert,
 	errCh chan<- error,
 	statusCh chan string,
 	done <-chan struct{}) {
 
-	maxCount := 0
-	minCount := 0
+	minCount := "0"
 
 	// Создаем мапу для хранения уникальных CweId с массивом всех TotalCommonAlerts
-	alertMap := make(map[string]*CommonAlert)
+	// alertMap := make(map[string]*CommonAlert)
 
 	for {
 		select {
 		case <-done:
 			return
 		default:
-			listOfAlerts, err := main.GetAlerts("0")
+			maxCount, _ := main.CountOfAlerts()
+			listOfAlerts, err := main.GetAlerts(minCount, maxCount)
 			if err != nil {
 				errCh <- err
 			}
-			if len(listOfAlerts.Alert) > maxCount {
-				maxCount = len(listOfAlerts.Alert)
-			} else {
-				continue
-			}
 			if len(listOfAlerts.Alert) > 0 {
 				// Проверяем, существует ли уже алерт с этим CweId
-				for _, item := range listOfAlerts.Alert[minCount : maxCount-1] {
-					if existingAlert, exists := alertMap[item.CweId]; exists {
-						existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
-						existingAlert.Count++
-						lastAlertCh <- *existingAlert
-					} else {
-						// Создаем новый алерт и добавляем его в список соответствующего уровня риска
-						totalCommonAlerts := make([]models.Alert, 0, 256)
-						totalCommonAlerts = append(totalCommonAlerts, item)
-						newAlert := CommonAlert{
-							CweId:             item.CweId,
-							Name:              item.Alert,
-							Count:             1,
-							Risk:              item.Risk,
-							TotalCommonAlerts: totalCommonAlerts,
-						}
-
-						// Добавляем новый алерт в alertMap и соответствующий уровень риска
-						alertMap[item.CweId] = &newAlert
-						lastAlertCh <- newAlert
-					}
+				for _, item := range listOfAlerts.Alert {
+					lastAlertCh <- item
+					// if existingAlert, exists := alertMap[item.CweId]; exists {
+					// 	existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
+					// 	existingAlert.Count++
+					// 	lastAlertCh <- *existingAlert
+					// } else {
+					// 	// Создаем новый алерт и добавляем его в список соответствующего уровня риска
+					// 	totalCommonAlerts := make([]models.Alert, 0, 512)
+					// 	totalCommonAlerts = append(totalCommonAlerts, item)
+					// 	newAlert := CommonAlert{
+					// 		CweId:             item.CweId,
+					// 		Name:              item.Alert,
+					// 		Count:             1,
+					// 		Risk:              item.Risk,
+					// 		TotalCommonAlerts: totalCommonAlerts,
+					// 	}
+					// 	// Добавляем новый алерт в alertMap и соответствующий уровень риска
+					// 	alertMap[item.CweId] = &newAlert
+					// 	lastAlertCh <- newAlert
+					// }
 				}
+				minCount = maxCount
 			}
-			minCount = maxCount - 1
 		}
 		status, err := ascan.GetStatus()
 		if err != nil {

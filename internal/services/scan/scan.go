@@ -50,7 +50,7 @@ func (s *Scanner) StartScan(c *gin.Context) {
 	outputPassiveScan(c, spider, ascan, &wg)
 
 	ssEventStatus(c, "100", true)
-	s.ActiveScanner = *ascan
+	// s.ActiveScanner = *ascan
 }
 
 func (s *Scanner) HandleAction(c *gin.Context) {
