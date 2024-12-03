@@ -284,32 +284,16 @@
 
                 const vulnDetailsList = document.getElementById(`details-${data.risk}-${data.name}`);
 
-                // Проверка на дублирование элемента для данного URL и метода
-                
                 let lastVuln = document.getElementById(`vuln-${data.method}-${data.url}`)
                 if (!lastVuln) {
                     const lastVuln = document.createElement('li');
                     lastVuln.id = `${data.method}-${data.url}`;
-                    lastVuln.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#lastVuln-${data.method}-${data.url}">${data.method} ${data.url}</a>`;
+                    lastVuln.innerHTML = `<a href="#!" data-toggle="collapse" data-target="#lastVuln-${data.method}-${data.url}">${data.method} ${data.url}</a>
+                    <ul id="lastVuln-${data.method}-${data.url}" class="collapse list-unstyled ml-4"></ul>`;
                     vulnDetailsList.appendChild(lastVuln);
                 }
-                // data.commonAlert.forEach(alert => {
-                //     const existingAlert = Array.from(vulnDetailsList.children).find(item =>
-                //         item.dataset.url === alert.URL && item.dataset.method === alert.Method
-                //     );
-
-                //     if (!existingAlert) {
-                //         const alertItem = document.createElement('li');
-                //         alertItem.dataset.url = alert.URL;
-                //         alertItem.dataset.method = alert.Method;
-                //         alertItem.textContent = `${alert.Method} - ${alert.URL}`;
-                //         vulnDetailsList.appendChild(alertItem);
-                //     }
-                // });
             }
         }
-
-
     </script>
 </body>
 

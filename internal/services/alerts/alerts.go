@@ -34,9 +34,9 @@ func (a *Alerts) GetAlerts(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
-	
+
 	main := a.scanner.MainScanner
-	ascan := a.scanner.ActiveScanner
+	ascan := a.scanner.ActiveScanner 
 
 	var wg sync.WaitGroup
 	lastAlertCh := make(chan models.Alert)
@@ -97,9 +97,6 @@ func commonRisks(main gozap.MainScan,
 
 	minCount := "0"
 
-	// Создаем мапу для хранения уникальных CweId с массивом всех TotalCommonAlerts
-	// alertMap := make(map[string]*CommonAlert)
-
 	for {
 		select {
 		case <-done:
@@ -111,7 +108,6 @@ func commonRisks(main gozap.MainScan,
 				errCh <- err
 			}
 			if len(listOfAlerts.Alert) > 0 {
-				// Проверяем, существует ли уже алерт с этим CweId
 				for _, item := range listOfAlerts.Alert {
 					lastAlertCh <- item
 					// if existingAlert, exists := alertMap[item.CweId]; exists {

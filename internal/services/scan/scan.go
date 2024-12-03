@@ -1,11 +1,12 @@
 package scan
 
 import (
-	"github.com/YoungGoofy/gozap/pkg/gozap"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/YoungGoofy/gozap/pkg/gozap"
+	"github.com/gin-gonic/gin"
 )
 
 type Scanner struct {
@@ -18,7 +19,10 @@ func NewScanner(apiKey string) *Scanner {
 	newScan := gozap.NewMainScan()
 	newScan.AddApiKey(apiKey)
 
-	return &Scanner{MainScanner: *newScan}
+	newAScan := gozap.NewActiveScanner(*newScan)
+
+	newPScan := gozap.NewSpider(*newScan)
+	return &Scanner{MainScanner: *newScan, PassiveScanner: *newPScan, ActiveScanner: *newAScan}
 }
 
 func (s *Scanner) StartScan(c *gin.Context) {
