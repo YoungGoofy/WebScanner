@@ -1,7 +1,7 @@
 package alerts
 
 import (
-	"net/http"
+	"context"
 	"sync"
 	"time"
 
@@ -11,203 +11,174 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type (
-	Alerts struct {
-		scanner *scan.Scanner
-		risks   map[string][]CommonAlert
-	}
-	CommonAlert struct {
-		CweId             string
-		Count             int
-		Name              string
-		Risk              string
-		TotalCommonAlerts []models.Alert
-	}
-)
-
-func NewAlerts(scanner scan.Scanner) *Alerts {
-	r := make(map[string][]CommonAlert)
-	return &Alerts{scanner: &scanner, risks: r}
+// Alerts хранит сканер и карту рисков (для примера).
+type Alerts struct {
+	scanner *scan.Scanner
+	risks   map[string][]CommonAlert
 }
 
+// CommonAlert описывает общую структуру для алертов.
+type CommonAlert struct {
+	CweId             string
+	Count             int
+	Name              string
+	Risk              string
+	TotalCommonAlerts []models.Alert
+}
+
+// NewAlerts создаёт новый объект Alerts с переданным сканером.
+func NewAlerts(scanner scan.Scanner) *Alerts {
+	r := make(map[string][]CommonAlert)
+	return &Alerts{
+		scanner: &scanner,
+		risks:   r,
+	}
+}
+
+// GetAlerts обрабатывает SSE-запрос. Отправляет события об алертах.
+// Завершается, когда скан активного анализа возвращает статус "100" или по отмене контекста.
 func (a *Alerts) GetAlerts(c *gin.Context) {
+	// Устанавливаем заголовки для SSE
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 
-	main := a.scanner.MainScanner
-	ascan := a.scanner.ActiveScanner 
+	// Создаём контекст, который отменится при разрыве соединения клиентом или при timeout
+	ctx, cancel := context.WithCancel(c.Request.Context())
+	defer cancel()
 
+	mainScan := a.scanner.MainScan
+	activeScan := a.scanner.ActiveScan
+
+	// Создаём каналы для обмена данными
+	lastAlertCh := make(chan models.Alert, 100) // буфер для избежания блокировок
+	errCh := make(chan error, 10)
+	statusCh := make(chan string, 10)
+
+	// Запускаем горутину, которая будет собирать алерты
 	var wg sync.WaitGroup
-	lastAlertCh := make(chan models.Alert)
-	errCh := make(chan error)
-	statusCh := make(chan string)
-	done := make(chan struct{})
-	ticker := time.Tick(250 * time.Millisecond)
-
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		commonRisks(main, ascan, lastAlertCh, errCh, statusCh, done)
+		a.collectAlerts(ctx, mainScan, activeScan, lastAlertCh, errCh, statusCh)
 	}()
 
-	for range ticker {
+	// Основной цикл чтения из каналов
+	//
+	// Если хотим регулярно «пинговать» клиента пустым событием,
+	// чтобы соединение не рвалось, можем в select добавить:
+	// case <-time.After(250 * time.Millisecond):
+	// 	// отправляем, например, ping-событие.
+	for {
 		select {
+		case <-ctx.Done():
+			// Клиент закрыл соединение или отмена по таймауту — выходим
+			close(lastAlertCh)
+			close(errCh)
+			close(statusCh)
+			wg.Wait()
+			return
+
 		case alert := <-lastAlertCh:
 			c.SSEvent("alerts", map[string]any{
+				"id":         alert.ID,
 				"name":       alert.Name,
 				"risk":       alert.Risk,
 				"method":     alert.Method,
 				"url":        alert.URL,
 				"cweid":      alert.CweId,
-				"desciption": alert.Description,
+				"description": alert.Description, // исправил "desciption" -> "description"
 				"solution":   alert.Solution,
-				"attack":     alert.Attack,
 			})
+			// Важно «проталкивать» ответ в реальном времени
 			c.Writer.Flush()
+
 		case err := <-errCh:
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
+			// В зависимости от задачи: можно завершать SSE при ошибке,
+			// либо отправлять ошибку и продолжать.
+			c.SSEvent("error", gin.H{"error": err.Error()})
+			c.Writer.Flush()
+
 		case status := <-statusCh:
 			if status == "100" {
-				close(done)
+				// Скан завершается — отменяем контекст
+				cancel()
 			}
-		case <-done:
-			wg.Wait()
-			close(lastAlertCh)
-			close(errCh)
-			close(statusCh)
-			return
 		}
 	}
-
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"title": "Alerts",
-	// 	"risks": a.risks,
-	// })
 }
 
-func commonRisks(main gozap.MainScan,
+// collectAlerts запускается в отдельной горутине и регулярно собирает алерты из MainScan,
+// а также отслеживает статус ActiveScan.
+func (a *Alerts) collectAlerts(
+	ctx context.Context,
+	main gozap.MainScan,
 	ascan gozap.ActiveScanner,
 	lastAlertCh chan<- models.Alert,
 	errCh chan<- error,
-	statusCh chan string,
-	done <-chan struct{}) {
-
+	statusCh chan<- string,
+) {
 	minCount := "0"
 
 	for {
+		// Перед каждой итерацией проверяем, не отменён ли контекст
 		select {
-		case <-done:
+		case <-ctx.Done():
 			return
 		default:
-			maxCount, _ := main.CountOfAlerts()
-			listOfAlerts, err := main.GetAlerts(minCount, maxCount)
-			if err != nil {
-				errCh <- err
-			}
-			if len(listOfAlerts.Alert) > 0 {
-				for _, item := range listOfAlerts.Alert {
-					lastAlertCh <- item
-					// if existingAlert, exists := alertMap[item.CweId]; exists {
-					// 	existingAlert.TotalCommonAlerts = append(existingAlert.TotalCommonAlerts, item)
-					// 	existingAlert.Count++
-					// 	lastAlertCh <- *existingAlert
-					// } else {
-					// 	// Создаем новый алерт и добавляем его в список соответствующего уровня риска
-					// 	totalCommonAlerts := make([]models.Alert, 0, 512)
-					// 	totalCommonAlerts = append(totalCommonAlerts, item)
-					// 	newAlert := CommonAlert{
-					// 		CweId:             item.CweId,
-					// 		Name:              item.Alert,
-					// 		Count:             1,
-					// 		Risk:              item.Risk,
-					// 		TotalCommonAlerts: totalCommonAlerts,
-					// 	}
-					// 	// Добавляем новый алерт в alertMap и соответствующий уровень риска
-					// 	alertMap[item.CweId] = &newAlert
-					// 	lastAlertCh <- newAlert
-					// }
-				}
-				minCount = maxCount
+		}
+
+		// Получаем текущее количество алертов
+		maxCount, err := main.CountOfAlerts()
+		if err != nil {
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
+				return
 			}
 		}
+
+		// Если есть новые алерты, собираем их
+		listOfAlerts, err := main.GetAlerts(minCount, maxCount)
+		if err != nil {
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(listOfAlerts.Alert) > 0 {
+			for _, item := range listOfAlerts.Alert {
+				// Отправляем каждый алерт в канал
+				select {
+				case lastAlertCh <- item:
+				case <-ctx.Done():
+					return
+				}
+			}
+			minCount = maxCount
+		}
+
+		// Проверяем статус активного сканирования
 		status, err := ascan.GetStatus()
 		if err != nil {
-			errCh <- err
+			select {
+			case errCh <- err:
+			case <-ctx.Done():
+				return
+			}
 		}
-		statusCh <- status
-	}
-}
 
-/* type Pagination struct {
-	PrevPage int
-	NextPage int
-	CurrPage int
-}
-
-func GetTotalCommonAlerts(c *gin.Context) {
-	cweId := c.Param("cwe_id")
-	page, err := strconv.Atoi(c.Param("page"))
-	startIndex := (page - 1) * 25
-	endIndex := page * 25
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-	}
-
-	values := a.groupOfCommonAlerts.getAlertsFromCweId(cweId)
-	if values == nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "No cwe_id",
-		})
-	}
-	if endIndex > len(values) {
-		endIndex = len(values)
-	}
-	c.HTML(http.StatusOK, "totalAlerts.html", gin.H{
-		"cwe_id": cweId,
-		"values": values[startIndex:endIndex],
-		"pagination": Pagination{
-			PrevPage: page - 1,
-			CurrPage: page,
-			NextPage: page + 1,
-		},
-	})
-}
-
-func (g *groupOfCommonAlerts) getAlertsFromCweId(cweId string) []models.Alert {
-	for _, item := range g.CommonAlerts {
-		if cweId == item.CweId {
-			g.actualListOfAlerts = item.TotalCommonAlerts
-			return item.TotalCommonAlerts
+		select {
+		case statusCh <- status:
+		case <-ctx.Done():
+			return
 		}
-	}
-	return nil
-}
 
-func GetOnlyAlert(c *gin.Context) {
-	id := c.Param("id")
-	errorAlert := models.Alert{ID: "-1"}
-	value := a.groupOfCommonAlerts.getAlertFromId(id)
-	if value.ID == errorAlert.ID {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "No alert with this id",
-		})
+		// При желании — пауза между циклами.
+		// Убирая sleep, будем крутиться в «while(true)» максимально быстро.
+		// Но обычно стоит дать сканеру время для обновления данных.
+		time.Sleep(250 * time.Millisecond)
 	}
-	c.HTML(http.StatusOK, "alert.html", gin.H{
-		"title": value.Alert,
-		"value": value,
-	})
 }
-
-func (g *groupOfCommonAlerts) getAlertFromId(id string) models.Alert {
-	for _, alert := range g.actualListOfAlerts {
-		if alert.ID == id {
-			return alert
-		}
-	}
-	return models.Alert{ID: "-1"}
-} */
