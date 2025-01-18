@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,255 +8,258 @@
   <!-- Подключение Bootstrap -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
       margin: 0;
     }
+
     .container-fluid {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
     }
+
     .flex-grow-1 {
       flex-grow: 1;
     }
+
     .h-100 {
       height: 100%;
     }
   </style>
 </head>
+
 <body>
-<div class="container-fluid mt-4 d-flex flex-column min-vh-100">
-  <!-- Заголовок -->
-  <div class="row">
-    <div class="col-8">
-      <h1>gozap</h1>
-    </div>
-  </div>
-
-  <!-- Форма ввода ссылки -->
-  <form onsubmit="handleScanStart(event)" method="get">
-    <div class="row align-items-center mt-3">
-      <div class="col-4">
-        <input 
-          type="text" 
-          class="form-control" 
-          placeholder="Введите ссылку на сайт"
-          aria-label="Введите ссылку на сайт" 
-          name="url" 
-          aria-describedby="button-addon2" 
-          id="inputUrl" 
-          required
-        />
-      </div>
-      <div class="col-2">
-        <button class="btn btn-outline-secondary" type="submit" id="submitButton">
-          Старт
-        </button>
+  <div class="container-fluid mt-4 d-flex flex-column min-vh-100">
+    <!-- Заголовок -->
+    <div class="row">
+      <div class="col-8">
+        <h1>gozap</h1>
       </div>
     </div>
-  </form>
 
-  <!-- Контент -->
-  <div class="row mt-3">
-    <!-- Блок 1: Ссылки и прогрессбар -->
-    <div class="col-6">
-      <!-- Прогрессбар -->
-      <div class="progress mb-3">
-        <div 
-          id="progressBar" 
-          class="progress-bar" 
-          role="progressbar" 
-          aria-valuemin="0" 
-          aria-valuemax="100"
-          style="width: 0%" 
-          aria-valuenow="0">
+    <!-- Форма ввода ссылки -->
+    <form onsubmit="handleScanStart(event)" method="get">
+      <div class="row align-items-center mt-3">
+        <div class="col-4">
+          <input type="text" class="form-control" placeholder="Введите ссылку на сайт"
+            aria-label="Введите ссылку на сайт" name="url" aria-describedby="button-addon2" id="inputUrl" required />
+        </div>
+        <div class="col-2">
+          <button class="btn btn-outline-secondary" type="submit" id="submitButton">
+            Старт
+          </button>
         </div>
       </div>
-      <!-- Вывод ссылок -->
-      <div class="border p-2" style="height: 600px; overflow-y: scroll">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Processed</th>
-              <th scope="col">Status Reason</th>
-              <th scope="col">Method</th>
-              <th scope="col">Reason Not Processed</th>
-              <th scope="col">Message Id</th>
-              <th scope="col">Url</th>
-              <th scope="col">Status Code</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody"></tbody>
-        </table>
+    </form>
+
+    <!-- Контент -->
+    <div class="row mt-3">
+      <!-- Блок 1: Ссылки и прогрессбар -->
+      <div class="col-6">
+        <!-- Прогрессбар -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="progress" style="flex: 1; margin-bottom: 0;">
+            <div id="progress-bar" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+              style="width: 0%" aria-valuenow="0"></div>
+          </div>
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked"
+              name="runActiveScanner">
+            <label class="form-check-label" for="flexSwitchCheckChecked">Запуск активного сканирования</label>
+          </div>
+        </div>
+
+        <!-- Вывод ссылок -->
+        <div class="border p-2" style="height: 600px; overflow-y: scroll">
+          <table class="table">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Processed</th>
+                <th scope="col">Status Reason</th>
+                <th scope="col">Method</th>
+                <th scope="col">Reason Not Processed</th>
+                <th scope="col">Message Id</th>
+                <th scope="col">Url</th>
+                <th scope="col">Status Code</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
       </div>
-    </div>
 
-    <!-- Блоки 2 и 3: Уязвимости и подробности -->
-    <div class="col-6">
-      <!-- Блок 2: Уязвимости -->
-      <div class="border p-2 mb-3" style="height: 300px; overflow-y: scroll">
-        <div class="row">
-          <div class="col">
-            <!-- Вкладки -->
-            <ul class="nav nav-tabs" id="tabs">
-              <li class="nav-item">
-                <a class="nav-link active" id="tab-High" href="#" onclick="showTab('High')">High</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="tab-Medium" href="#" onclick="showTab('Medium')">Medium</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="tab-Low" href="#" onclick="showTab('Low')">Low</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" id="tab-Informational" href="#" onclick="showTab('Informational')">Informational</a>
-              </li>
-            </ul>
+      <!-- Блоки 2 и 3: Уязвимости и подробности -->
+      <div class="col-6">
+        <!-- Блок 2: Уязвимости -->
+        <div class="border p-2 mb-3" style="height: 300px; overflow-y: scroll">
+          <div class="row">
+            <div class="col">
+              <!-- Вкладки -->
+              <ul class="nav nav-tabs" id="tabs">
+                <li class="nav-item">
+                  <a class="nav-link active" id="tab-High" href="#" onclick="showTab('High')">High</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="tab-Medium" href="#" onclick="showTab('Medium')">Medium</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="tab-Low" href="#" onclick="showTab('Low')">Low</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" id="tab-Informational" href="#"
+                    onclick="showTab('Informational')">Informational</a>
+                </li>
+              </ul>
 
-            <!-- Контент вкладок -->
-            <div class="tab-content" id="tab-content">
-              <div class="tab-pane active" id="content-High">
-                <h3>Информация об уязвимостях с высоким риском</h3>
-              </div>
-              <div class="tab-pane" id="content-Medium">
-                <h3>Информация об уязвимостях со средним риском</h3>
-              </div>
-              <div class="tab-pane" id="content-Low">
-                <h3>Информация об уязвимостях с низким риском</h3>
-              </div>
-              <div class="tab-pane" id="content-Informational">
-                <h3>Информация об информационных уведомлениях</h3>
+              <!-- Контент вкладок -->
+              <div class="tab-content" id="tab-content">
+                <div class="tab-pane active" id="content-High">
+                  <h3>Информация об уязвимостях с высоким риском</h3>
+                </div>
+                <div class="tab-pane" id="content-Medium">
+                  <h3>Информация об уязвимостях со средним риском</h3>
+                </div>
+                <div class="tab-pane" id="content-Low">
+                  <h3>Информация об уязвимостях с низким риском</h3>
+                </div>
+                <div class="tab-pane" id="content-Informational">
+                  <h3>Информация об информационных уведомлениях</h3>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Блок 3: Подробная информация об уязвимости -->
-      <div class="border p-2" id="vulnerabilityInfo" style="height: 300px; overflow-y: scroll">
-        <h5>Подробная информация об уязвимости</h5>
-        <p id="vulnerability-details">Здесь будет выводиться информация о выбранной уязвимости.</p>
+        <!-- Блок 3: Подробная информация об уязвимости -->
+        <div class="border p-2" id="vulnerabilityInfo" style="height: 300px; overflow-y: scroll">
+          <h5>Подробная информация об уязвимости</h5>
+          <p id="vulnerability-details">Здесь будет выводиться информация о выбранной уязвимости.</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Подключение Bootstrap JS -->
-<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!-- Подключение Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
 
-<script>
-  // Хранилище для уязвимостей
-  let vulnerabilitiesStore = {};
+  <script>
+    // Хранилище для уязвимостей
+    let vulnerabilitiesStore = {};
 
-  /**
-   * Переключение вкладок (High, Medium, Low, Informational)
-   * @param {string} riskLevel
-   */
-  function showTab(riskLevel) {
-    // Скрыть все контентные блоки
-    document.querySelectorAll(".tab-pane").forEach((pane) => {
-      pane.classList.remove("active");
-    });
-    // Убрать активный класс со всех ссылок
-    document.querySelectorAll(".nav-link").forEach((link) => {
-      link.classList.remove("active");
-    });
-    // Показать нужную вкладку
-    const activeTabPane = document.getElementById("content-" + riskLevel);
-    if (activeTabPane) activeTabPane.classList.add("active");
-    // Подсветить выбранную ссылку
-    const activeTabLink = document.getElementById("tab-" + riskLevel);
-    if (activeTabLink) activeTabLink.classList.add("active");
-  }
-
-  /**
-   * Обработчик отправки формы для запуска сканирования
-   * @param {Event} event
-   */
-  function handleScanStart(event) {
-    event.preventDefault();
-
-    const submitButton = document.getElementById("submitButton");
-    const inputUrl = document.getElementById("inputUrl");
-    const urlValue = inputUrl.value.trim();
-    if (!urlValue) return;
-
-    // Блокируем кнопку, чтобы избежать повторных кликов
-    submitButton.disabled = true;
-
-    // Создаём EventSource для «прогресса» и «результатов»
-    const scanEventSource = new EventSource(`scan?url=${encodeURIComponent(urlValue)}`);
-    // Создаём EventSource для «alerts» (информация об уязвимостях)
-    const alertEventSource = new EventSource("/alerts");
-
-    // Слушаем прогресс
-    scanEventSource.addEventListener("progress", (event) => {
-      const data = JSON.parse(event.data);
-      if (data?.progressPercentage) {
-        updateProgressBar(data.progressPercentage);
-      }
-      // Если сканирование завершено
-      if (data.completed === true) {
-        closeStreams();
-      }
-    });
-
-    // Слушаем результаты (список ссылок, статусы и т.д.)
-    scanEventSource.addEventListener("results", (event) => {
-      const data = JSON.parse(event.data);
-      appendTableRow(data);
-    });
-
-    // Слушаем оповещения об уязвимостях
-    alertEventSource.addEventListener("alerts", (event) => {
-      const data = JSON.parse(event.data);
-      appendVulnerability(data);
-    });
-
-    // Ошибки
-    scanEventSource.onerror = (error) => {
-      console.error("Scan SSE error:", error);
-      closeStreams();
-    };
-
-    alertEventSource.onerror = (error) => {
-      console.error("Alerts SSE error:", error);
-      // Здесь можно не закрывать основной стрим, если алерты упали — на ваше усмотрение.
-    };
-
-    // Функция закрытия стримов
-    function closeStreams() {
-      console.log("Closing streams...");
-      submitButton.disabled = false;
-      scanEventSource.close();
-      alertEventSource.close();
+    /**
+     * Переключение вкладок (High, Medium, Low, Informational)
+     * @param {string} riskLevel
+     */
+    function showTab(riskLevel) {
+      // Скрыть все контентные блоки
+      document.querySelectorAll(".tab-pane").forEach((pane) => {
+        pane.classList.remove("active");
+      });
+      // Убрать активный класс со всех ссылок
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.classList.remove("active");
+      });
+      // Показать нужную вкладку
+      const activeTabPane = document.getElementById("content-" + riskLevel);
+      if (activeTabPane) activeTabPane.classList.add("active");
+      // Подсветить выбранную ссылку
+      const activeTabLink = document.getElementById("tab-" + riskLevel);
+      if (activeTabLink) activeTabLink.classList.add("active");
     }
-  }
 
-  /**
-   * Обновляет прогресс-бар
-   * @param {number} percentage
-   */
-  function updateProgressBar(percentage) {
-    const progressBar = document.getElementById("progressBar");
-    progressBar.style.width = `${percentage}%`;
-    progressBar.setAttribute("aria-valuenow", percentage);
-  }
+    /**
+     * Обработчик отправки формы для запуска сканирования
+     * @param {Event} event
+     */
+    function handleScanStart(event) {
+      event.preventDefault();
 
-  /**
-   * Добавляет новую строку в таблицу результатов
-   * @param {Object} data
-   */
-  function appendTableRow(data) {
-    const { processed, statusReason, method, reasonNotProcessed, messageId, url, statusCode } = data;
-    const tableBody = document.getElementById("tableBody");
+      const submitButton = document.getElementById("submitButton");
+      const inputUrl = document.getElementById("inputUrl");
+      const urlValue = inputUrl.value.trim();
+      if (!urlValue) return;
 
-    const newRow = document.createElement("tr");
-    newRow.innerHTML = `
+      // Блокируем кнопку, чтобы избежать повторных кликов
+      submitButton.disabled = true;
+
+      // Создаём EventSource для «прогресса» и «результатов»
+      const scanEventSource = new EventSource(`scan?url=${encodeURIComponent(urlValue)}`);
+      // Создаём EventSource для «alerts» (информация об уязвимостях)
+      const alertEventSource = new EventSource("/alerts");
+
+      // Слушаем прогресс
+      scanEventSource.addEventListener("progress", (event) => {
+        const data = JSON.parse(event.data);
+        if (data?.progressPercentage) {
+          updateProgressBar(data.progressPercentage);
+        }
+        // Если сканирование завершено
+        if (data.completed === true) {
+          closeStreams();
+        }
+      });
+
+      // Слушаем результаты (список ссылок, статусы и т.д.)
+      scanEventSource.addEventListener("results", (event) => {
+        const data = JSON.parse(event.data);
+        appendTableRow(data);
+      });
+
+      // Слушаем оповещения об уязвимостях
+      alertEventSource.addEventListener("alerts", (event) => {
+        const data = JSON.parse(event.data);
+        appendVulnerability(data);
+      });
+
+      // Ошибки
+      scanEventSource.onerror = (error) => {
+        console.error("Scan SSE error:", error);
+        closeStreams();
+      };
+
+      alertEventSource.onerror = (error) => {
+        console.error("Alerts SSE error:", error);
+        // Здесь можно не закрывать основной стрим, если алерты упали — на ваше усмотрение.
+      };
+
+      // Функция закрытия стримов
+      function closeStreams() {
+        console.log("Closing streams...");
+        submitButton.disabled = false;
+        scanEventSource.close();
+        alertEventSource.close();
+      }
+    }
+
+    /**
+     * Обновляет прогресс-бар
+     * @param {number} percentage
+     */
+    function updateProgressBar(percentage) {
+      const progressBar = document.getElementById("progressBar");
+      progressBar.style.width = `${percentage}%`;
+      progressBar.setAttribute("aria-valuenow", percentage);
+    }
+
+    /**
+     * Добавляет новую строку в таблицу результатов
+     * @param {Object} data
+     */
+    function appendTableRow(data) {
+      const { processed, statusReason, method, reasonNotProcessed, messageId, url, statusCode } = data;
+      const tableBody = document.getElementById("tableBody");
+
+      const newRow = document.createElement("tr");
+      newRow.innerHTML = `
       <th scope="row">${tableBody.childElementCount + 1}</th>
       <td>${processed ?? ""}</td>
       <td>${statusReason ?? ""}</td>
@@ -265,31 +269,31 @@
       <td>${url ?? ""}</td>
       <td>${statusCode ?? ""}</td>
     `;
-    tableBody.appendChild(newRow);
-  }
-
-  /**
-   * Добавляет информацию об уязвимости в нужный таб
-   * @param {Object} vulnData
-   */
-  function appendVulnerability(vulnData) {
-    const { risk, cweid, name, id, method, url } = vulnData;
-
-    // Определяем контейнер вкладки по уровню риска
-    const riskContainer = document.getElementById(`content-${risk}`);
-    if (!riskContainer) {
-      console.warn(`Неизвестный уровень риска: ${risk}`);
-      return;
+      tableBody.appendChild(newRow);
     }
 
-    // Ищем <li> для данной CWE (cweid)
-    let cweItem = document.getElementById(`vuln-${risk}-${cweid}`);
-    if (!cweItem) {
-      cweItem = document.createElement("li");
-      cweItem.id = `vuln-${risk}-${cweid}`;
+    /**
+     * Добавляет информацию об уязвимости в нужный таб
+     * @param {Object} vulnData
+     */
+    function appendVulnerability(vulnData) {
+      const { risk, cweid, name, id, method, url } = vulnData;
 
-      // Создаём ссылку, по клику на которую будет открываться вложенный список
-      cweItem.innerHTML = `
+      // Определяем контейнер вкладки по уровню риска
+      const riskContainer = document.getElementById(`content-${risk}`);
+      if (!riskContainer) {
+        console.warn(`Неизвестный уровень риска: ${risk}`);
+        return;
+      }
+
+      // Ищем <li> для данной CWE (cweid)
+      let cweItem = document.getElementById(`vuln-${risk}-${cweid}`);
+      if (!cweItem) {
+        cweItem = document.createElement("li");
+        cweItem.id = `vuln-${risk}-${cweid}`;
+
+        // Создаём ссылку, по клику на которую будет открываться вложенный список
+        cweItem.innerHTML = `
         <a 
           href="#!" 
           data-toggle="collapse" 
@@ -302,19 +306,19 @@
           class="collapse list-unstyled ml-4"
         ></ul>
       `;
-      riskContainer.appendChild(cweItem);
-    }
+        riskContainer.appendChild(cweItem);
+      }
 
-    // Получаем вложенный список для деталей (URL'ы, методы и т.п.)
-    const vulnDetailsList = document.getElementById(`details-${risk}-${cweid}`);
-    if (!vulnDetailsList) return;
+      // Получаем вложенный список для деталей (URL'ы, методы и т.п.)
+      const vulnDetailsList = document.getElementById(`details-${risk}-${cweid}`);
+      if (!vulnDetailsList) return;
 
-    // Проверяем, не добавляли ли мы уже конкретную уязвимость по ID
-    let vulnItem = document.getElementById(`vuln-${id}`);
-    if (!vulnItem) {
-      vulnItem = document.createElement("li");
-      vulnItem.id = `vuln-${id}`;
-      vulnItem.innerHTML = `
+      // Проверяем, не добавляли ли мы уже конкретную уязвимость по ID
+      let vulnItem = document.getElementById(`vuln-${id}`);
+      if (!vulnItem) {
+        vulnItem = document.createElement("li");
+        vulnItem.id = `vuln-${id}`;
+        vulnItem.innerHTML = `
         <a 
           href="#!" 
           data-toggle="collapse" 
@@ -323,26 +327,26 @@
           ${method} ${url}
         </a>
       `;
-      vulnDetailsList.appendChild(vulnItem);
-      vulnerabilitiesStore[id] = vulnData; 
-    }
-  }
-
-  /**
-   * Показывает детальную информацию об уязвимости
-   * @param {string | number} id
-   */
-  function showVulnerabilityDetails(id) {
-    const container = document.getElementById("vulnerabilityInfo");
-    const vuln = vulnerabilitiesStore[id];
-
-    if (!vuln) {
-      container.innerHTML = `<h5>Уязвимость не найдена</h5>`;
-      return;
+        vulnDetailsList.appendChild(vulnItem);
+        vulnerabilitiesStore[id] = vulnData;
+      }
     }
 
-    // Формируем HTML с деталями
-    container.innerHTML = `
+    /**
+     * Показывает детальную информацию об уязвимости
+     * @param {string | number} id
+     */
+    function showVulnerabilityDetails(id) {
+      const container = document.getElementById("vulnerabilityInfo");
+      const vuln = vulnerabilitiesStore[id];
+
+      if (!vuln) {
+        container.innerHTML = `<h5>Уязвимость не найдена</h5>`;
+        return;
+      }
+
+      // Формируем HTML с деталями
+      container.innerHTML = `
       <h5>Подробная информация об уязвимости №${id}</h5>
       <h4>${vuln.name}</h4>
       <p><strong>ID:</strong> ${vuln.id}</p>
@@ -353,7 +357,8 @@
       <p><strong>Описание:</strong> ${vuln.description ?? "—"}</p>
       <p><strong>Рекомендации по устранению:</strong> ${vuln.solution ?? "—"}</p>
     `;
-  }
-</script>
+    }
+  </script>
 </body>
+
 </html>

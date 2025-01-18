@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Маленькая круговая шкала</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .circular-meter {
+            width: 75px;
+            /* в 2 раза меньше */
+            height: 75px;
+            position: relative;
+            /* для центрирования текста */
+            display: inline-block;
+            margin: 10px;
+            /* можно уменьшить отступ, чтобы размещать несколько рядом */
+        }
+
+        .circular-meter .center-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            /* чуть помельче, чем было 18px */
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Круговая шкала, демонстрация 10% -->
+    <div class="circular-meter" data-value="10">
+        <svg width="75" height="75">
+            <!-- Фоновый круг (серый) -->
+            <circle cx="37.5" cy="37.5" r="30" fill="none" stroke="#ddd" stroke-width="8" />
+            <!-- Активная дуга -->
+            <circle class="progress-ring" cx="37.5" cy="37.5" r="30" fill="none" stroke="green" stroke-width="8"
+                stroke-dasharray="188" stroke-dashoffset="188" transform="rotate(-90 37.5 37.5)" />
+        </svg>
+        <div class="center-value">10%</div>
+    </div>
+
+    <!-- Круговая шкала, демонстрация 50% -->
+    <div class="circular-meter" data-value="50">
+        <svg width="75" height="75">
+            <circle cx="37.5" cy="37.5" r="30" fill="none" stroke="#ddd" stroke-width="8" />
+            <circle class="progress-ring" cx="37.5" cy="37.5" r="30" fill="none" stroke="green" stroke-width="8"
+                stroke-dasharray="188" stroke-dashoffset="188" transform="rotate(-90 37.5 37.5)" />
+        </svg>
+        <div class="center-value">50%</div>
+    </div>
+
+    <!-- Круговая шкала, демонстрация 85% -->
+    <div class="circular-meter" data-value="85">
+        <svg width="75" height="75">
+            <circle cx="37.5" cy="37.5" r="30" fill="none" stroke="#ddd" stroke-width="8" />
+            <circle class="progress-ring" cx="37.5" cy="37.5" r="30" fill="none" stroke="green" stroke-width="8"
+                stroke-dasharray="188" stroke-dashoffset="188" transform="rotate(-90 37.5 37.5)" />
+        </svg>
+        <div class="center-value">85%</div>
+    </div>
+
+    <script>
+        (function () {
+            // Инициализируем все .circular-meter
+            document.querySelectorAll('.circular-meter').forEach(function (meter) {
+                let value = parseInt(meter.getAttribute('data-value'), 10);
+                if (isNaN(value) || value < 0) value = 0;
+                if (value > 100) value = 100;
+
+                // Ищем круг "progress-ring"
+                const circle = meter.querySelector('.progress-ring');
+                // Длина окружности для r=30
+                const circumference = 188;
+
+                // Рассчитываем dashoffset, чтобы заполнить нужный процент
+                const offset = circumference - (circumference * (value / 100));
+                circle.style.strokeDashoffset = offset;
+
+                // Простой выбор цвета: green, orange, red
+                if (value <= 33) {
+                    circle.style.stroke = 'green';
+                } else if (value <= 66) {
+                    circle.style.stroke = 'orange';
+                } else {
+                    circle.style.stroke = 'red';
+                }
+
+                // Обновляем текст в центре
+                meter.querySelector('.center-value').textContent = value + '%';
+            });
+        })();
+    </script>
+
+</body>
+
+</html>
