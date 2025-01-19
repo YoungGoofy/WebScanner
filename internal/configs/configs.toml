@@ -1,2 +1,8 @@
 [api]
-key = 'vggv0fl90debphkinn0l582mck'
+key = '9cot29nr00u44i8csk430m3ned'
+
+[database]
+host = "localhost"      # хост, на котором крутится Redis
+port = 6379             # порт Redis
+password = ""           # пароль, если установлен
+db = 0                  # номер базы Redis (по умолчанию 0)

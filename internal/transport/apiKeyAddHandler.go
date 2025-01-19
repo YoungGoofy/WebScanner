@@ -20,6 +20,5 @@ func postAPIKey(c *gin.Context) {
 		log.Println(err)
 		return
 	}
-	//c.HTML(http.StatusOK, "settings.html", gin.H{"apiKey": newApiKey.ApiKey})
-	c.Redirect(http.StatusFound, "/")
+	c.JSON(http.StatusOK, gin.H{"message": "API ключ успешно сохранен"})
 }

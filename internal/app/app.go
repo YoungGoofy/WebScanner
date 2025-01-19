@@ -1,15 +1,15 @@
 package app
 
 import (
+	"log"
+
 	"github.com/YoungGoofy/WebScanner/internal/transport"
 	"github.com/gin-gonic/gin"
-	"log"
 )
 
 func Run() {
 	router := gin.Default()
-	//router.Use(static.Serve("/", static.LocalFile("./web/views", true)))
-	router.LoadHTMLGlob("web/views/*")
+	router.LoadHTMLGlob("frontend/*")
 	transport.MainHandler(router)
 	log.Println("Listening server on: http://localhost:3000")
 	if err := router.Run(":3000"); err != nil {
