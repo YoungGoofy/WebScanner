@@ -8,7 +8,7 @@ import (
 
 func GetStatus(scanner scan.Scanner) (string, error) {
   // get status of passive scanner
-  pscan := scanner.PassiveScanner
+  pscan := scanner.PassiveScan
   pStatus, err := pscan.GetStatus()
   if err != nil {
     return "", err
@@ -19,7 +19,7 @@ func GetStatus(scanner scan.Scanner) (string, error) {
   }
 
   // get status of active scanner
-  ascan := scanner.ActiveScanner
+  ascan := scanner.ActiveScan
   aStatus, err := ascan.GetStatus()
   if err != nil {
     return "", err
