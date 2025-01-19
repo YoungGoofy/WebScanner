@@ -27,18 +27,46 @@
     .h-100 {
       height: 100%;
     }
+
+    .circular-meter {
+      width: 75px;
+      /* в 2 раза меньше */
+      height: 75px;
+      position: relative;
+      /* для центрирования текста */
+      display: inline-block;
+      margin: 10px;
+      /* можно уменьшить отступ, чтобы размещать несколько рядом */
+    }
+
+    .circular-meter .center-value {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 12px;
+      /* чуть помельче, чем было 18px */
+      font-weight: bold;
+    }
   </style>
 </head>
 
 <body>
-  <div class="container-fluid mt-4 d-flex flex-column min-vh-100">
+  <div class="container-fluid d-flex flex-column min-vh-100">
     <!-- Заголовок -->
     <div class="row">
       <div class="col-8">
         <h1>gozap</h1>
       </div>
     </div>
-
+    <div class="circular-meter" id="r-meter" data-value="50">
+      <svg width="75" height="75">
+        <circle cx="37.5" cy="37.5" r="30" fill="none" stroke="#ddd" stroke-width="8" />
+        <circle class="progress-ring" cx="37.5" cy="37.5" r="30" fill="none" stroke="green" stroke-width="8"
+          stroke-dasharray="188" stroke-dashoffset="188" transform="rotate(-90 37.5 37.5)" />
+      </svg>
+      <div class="center-value">50%</div>
+    </div>
     <!-- Форма ввода ссылки -->
     <form onsubmit="handleScanStart(event)" method="get">
       <div class="row align-items-center mt-3">
@@ -220,6 +248,47 @@
         appendVulnerability(data);
       });
 
+      alertEventSource.addEventListener("security_rating", function (e) {
+        // Парсим данные (ожидаем JSON вида { "rating": число } )
+        const data = JSON.parse(e.data);
+        let rating = data.rating;
+
+        // Округляем и приводим к диапазону 0..100, если необходимо
+        rating = Math.round(rating);
+        if (rating < 0) rating = 0;
+        if (rating > 100) rating = 100;
+
+        // Ищем наш элемент circular-meter (по id="risk-meter", к примеру)
+        const meter = document.getElementById("r-meter");
+        if (!meter) return;
+
+        // Меняем атрибут data-value (для наглядности, если нужно)
+        meter.setAttribute("data-value", rating);
+
+        // Получаем сам круг progress-ring
+        const circle = meter.querySelector(".progress-ring");
+        // Длина окружности для r=30 (stroke-dasharray="188")
+        const circumference = 188;
+        // Считаем dashoffset
+        const offset = circumference - (circumference * (rating / 100));
+        circle.style.strokeDashoffset = offset;
+
+        // Простейшая цветовая логика
+        if (rating <= 33) {
+          circle.style.stroke = "green";
+        } else if (rating <= 66) {
+          circle.style.stroke = "orange";
+        } else {
+          circle.style.stroke = "red";
+        }
+
+        // Меняем текст в центре (процент)
+        const centerValue = meter.querySelector(".center-value");
+        if (centerValue) {
+          centerValue.textContent = rating + "%";
+        }
+      });
+
       // Ошибки
       scanEventSource.onerror = (error) => {
         console.error("Scan SSE error:", error);
@@ -245,7 +314,7 @@
      * @param {number} percentage
      */
     function updateProgressBar(percentage) {
-      const progressBar = document.getElementById("progressBar");
+      const progressBar = document.getElementById("progress-bar");
       progressBar.style.width = `${percentage}%`;
       progressBar.setAttribute("aria-valuenow", percentage);
     }
@@ -296,8 +365,8 @@
         cweItem.innerHTML = `
         <a 
           href="#!" 
-          data-toggle="collapse" 
-          data-target="#details-${risk}-${cweid}"
+          data-bs-toggle="collapse" 
+          data-bs-target="#details-${risk}-${cweid}"
         >
           ${name}
         </a>
@@ -321,7 +390,7 @@
         vulnItem.innerHTML = `
         <a 
           href="#!" 
-          data-toggle="collapse" 
+          data-bs-toggle="collapse" 
           onclick="showVulnerabilityDetails(${id})"
         >
           ${method} ${url}
